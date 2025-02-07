@@ -12,7 +12,7 @@ class Character:
 
 
         """CHARACTER STATS"""
-        self.username = "player {}".format(id(self))
+        self.username = "player {}".format(id(self)) # add way to personalize
         self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
