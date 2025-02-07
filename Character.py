@@ -12,12 +12,13 @@ class Character:
 
 
         """CHARACTER STATS"""
+        self.username = "player {}".format(id(self))
         self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
         self.distance_vision = 200
         self.damage = 20
-        self.delay = 1 #(between shoots), a lot of time so it is longer but more intense
+        self.delay = 0.3 #(between shoots), a lot of time so it is longer but more intense
         self.max_ammo = 30
         self.current_ammo = self.max_ammo
         self.time_to_reload = 3
@@ -76,9 +77,16 @@ class Character:
                 print("still on delay")
                 return False
 
-            rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000)
+            rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000, damage=self.damage)
             for ray in rays:
-                color = "yellow" if ray[1] == "object" else "green"
+                if ray[2] == "player":
+                    print("hit player, did damage", self.damage)
+                    color = "red"
+                elif ray[2] == "object":
+                    color = "yellow"
+                else:
+                    color = "gray"
+
                 pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
             self.last_shoot_time = time.time()
 
@@ -96,7 +104,7 @@ class Character:
     def get_center(self):
         return self.rect.center
 
-    def create_rays(self, num_rays=5, max_angle_view=80, distance=None):
+    def create_rays(self, num_rays=5, max_angle_view=80, distance=None, damage=0):
         # only works with odd numbers
         if distance is None:
             distance = self.distance_vision
@@ -131,6 +139,8 @@ class Character:
             for player in self.players:
                 point = find_hit_point_on_rectangle(self.get_center(), end_position, player.rect)
                 if point is not None:
+                    player.do_damage(damage, self)
+
                     # Calculate distance to current intersection
                     current_distance = distance_between_points(self.get_center(), point)
                     # Calculate distance to current closest point
@@ -156,6 +166,13 @@ class Character:
                 self.start_reloading_time = None
 
     """PYGAME"""
+    def do_damage(self, damage, by_player=None):
+        self.health -= damage
+        if self.health <= 0:
+            print("player died, killer was:", by_player.username)
+        else:
+            print("player took damage, current health:", self.health)
+
     def check_if_in_boundaries(self):
         if self.max_boundaries is not None:
             if self.rect.center[0] < self.max_boundaries[0]:
