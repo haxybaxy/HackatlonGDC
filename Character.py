@@ -209,16 +209,26 @@ class Character:
                 self.rect.center = (self.rect.center[0], self.max_boundaries[3])
 
     def draw(self, screen):
-        # draws character body
+        # Draw character body
         pygame.draw.rect(screen, "red", self.rect)
 
-        # draws direction indicator
+        # Draw direction indicator
         direction_vector = pygame.Vector2(0, -40).rotate(self.rotation)
         end_position = self.get_center() + direction_vector
         pygame.draw.line(screen, "blue", self.get_center(), end_position, 5)
 
-        # draws rays with different colors based on hit type
+        # Draw rays with different colors based on hit type
         rays = self.create_rays()
         for ray in rays:
             color = "yellow" if ray[1] == "object" else "green"
             pygame.draw.line(screen, color, ray[0][0], ray[0][1], 5)
+
+        # Draw health and ammo
+        font = pygame.font.Font(None, 24)  # Default font with size 24
+        health_text = font.render(f"Health: {self.health}", True, pygame.Color("white"))
+        ammo_text = font.render(f"Ammo: {self.current_ammo}", True, pygame.Color("white"))
+
+        # Position the text above the character
+        text_x, text_y = self.rect.topleft
+        screen.blit(health_text, (text_x, text_y - 25))  # Above the character
+        screen.blit(ammo_text, (text_x, text_y - 45))  # Even higher above the character
