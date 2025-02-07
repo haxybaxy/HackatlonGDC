@@ -5,6 +5,8 @@ from Character import Character
 from Obstacle import Obstacle
 from world_gen import spawn_objects
 
+#TODO: add controls for multiple players
+#TODO: add dummy bots so that they can train models
 
 def run_game():
 
