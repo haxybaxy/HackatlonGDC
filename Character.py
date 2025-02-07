@@ -8,10 +8,11 @@ from utils import find_hit_point_on_rectangle, distance_between_points
 
 class Character:
     def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None):
-        self.pos = pygame.Vector2(starting_pos)
         self.rotation = 0
         self.max_boundaries = boundaries
         self.objects = objects if objects is not None else []
+        self.rect = pygame.Rect(starting_pos, (80, 80))
+
 
         """CHARACTER STATS"""
         self.health = 100
@@ -33,7 +34,7 @@ class Character:
     """GETTERS"""
     def get_location(self):
         # returns the position of the character in (x, y) format
-        return self.pos
+        return self.get_center()
 
     def get_rotation(self):
         # returns the rotation of the character in degrees
@@ -47,13 +48,13 @@ class Character:
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
         if direction == "forward":
-            self.pos.y -= self.speed
+            self.rect.y -= self.speed
         elif direction == "right":
-            self.pos.x += self.speed
+            self.rect.x += self.speed
         elif direction == "down":
-            self.pos.y += self.speed
+            self.rect.y += self.speed
         elif direction == "left":
-            self.pos.x -= self.speed
+            self.rect.x -= self.speed
 
         self.check_if_in_boundaries()
 
@@ -68,6 +69,9 @@ class Character:
 
     "<<<<FOR USERS END>>>>"
     """UTILITIES"""
+    def get_center(self):
+        return self.rect.center
+
     def create_rays(self, num_rays=5, max_angle_view=80, distance=None):
         # only works with odd numbers
         if distance is None:
@@ -82,17 +86,17 @@ class Character:
             # Middle point is 80/5 * (5-1)//2 --> max_angle_view/num_rays * (num_rays-1)//2
             # Calculate ray endpoint
             direction_vector = pygame.Vector2(0, -distance).rotate(i - max_angle_view/num_rays * (num_rays-1)//2).rotate(self.rotation)
-            end_position = self.pos + direction_vector
+            end_position = self.get_center() + direction_vector
             closest_end_position = end_position  # Store the closest intersection point
 
             # Check collision with each object
             for object in self.objects:
-                point = find_hit_point_on_rectangle(self.pos, end_position, object.rect)
+                point = find_hit_point_on_rectangle(self.get_center(), end_position, object.rect)
                 if point is not None:
                     # Calculate distance to current intersection
-                    current_distance = distance_between_points(self.pos, point)
+                    current_distance = distance_between_points(self.get_center(), point)
                     # Calculate distance to current closest point
-                    closest_distance = distance_between_points(self.pos, closest_end_position)
+                    closest_distance = distance_between_points(self.get_center(), closest_end_position)
 
                     # Update closest point if this intersection is closer
                     if current_distance < closest_distance:
@@ -101,12 +105,12 @@ class Character:
                         hit_distance = current_distance
 
             for player in self.players:
-                point = find_hit_point_on_rectangle(self.pos, end_position, player.rect)
+                point = find_hit_point_on_rectangle(self.get_center(), end_position, player.rect)
                 if point is not None:
                     # Calculate distance to current intersection
-                    current_distance = distance_between_points(self.pos, point)
+                    current_distance = distance_between_points(self.get_center(), point)
                     # Calculate distance to current closest point
-                    closest_distance = distance_between_points(self.pos, closest_end_position)
+                    closest_distance = distance_between_points(self.get_center(), closest_end_position)
 
                     # Update closest point if this intersection is closer
                     if current_distance < closest_distance:
@@ -115,7 +119,7 @@ class Character:
                         hit_distance = current_distance
 
             # Add the ray with its closest intersection point (or original endpoint if no intersection)
-            rays.append([(self.pos, closest_end_position), hit_distance, hit_type])
+            rays.append([(self.get_center(), closest_end_position), hit_distance, hit_type])
 
         return rays
 
@@ -130,23 +134,23 @@ class Character:
     """PYGAME"""
     def check_if_in_boundaries(self):
         if self.max_boundaries is not None:
-            if self.pos.x < self.max_boundaries[0]:
-                self.pos.x = self.max_boundaries[0]
-            if self.pos.x > self.max_boundaries[2]:
-                self.pos.x = self.max_boundaries[2]
-            if self.pos.y < self.max_boundaries[1]:
-                self.pos.y = self.max_boundaries[1]
-            if self.pos.y > self.max_boundaries[3]:
-                self.pos.y = self.max_boundaries[3]
+            if self.rect.x < self.max_boundaries[0]:
+                self.rect.x = self.max_boundaries[0]
+            if self.rect.x > self.max_boundaries[2]:
+                self.rect.x = self.max_boundaries[2]
+            if self.rect.y < self.max_boundaries[1]:
+                self.rect.y = self.max_boundaries[1]
+            if self.rect.y > self.max_boundaries[3]:
+                self.rect.y = self.max_boundaries[3]
 
     def draw(self, screen):
         # Draw character body
-        pygame.draw.circle(screen, "red", self.pos, 40)
+        pygame.draw.rect(screen, "red", self.rect)
 
         # Draw direction indicator
         direction_vector = pygame.Vector2(0, -40).rotate(self.rotation)
-        end_position = self.pos + direction_vector
-        pygame.draw.line(screen, "blue", self.pos, end_position, 5)
+        end_position = self.get_center() + direction_vector
+        pygame.draw.line(screen, "blue", self.get_center(), end_position, 5)
 
         # Draw rays with different colors based on hit type
         rays = self.create_rays()

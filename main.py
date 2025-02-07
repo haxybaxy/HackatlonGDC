@@ -1,6 +1,8 @@
 import pygame
 from Character import Character
 from Obstacle import Obstacle
+from world_gen import spawn_objects
+
 
 # pygame setup
 pygame.init()
@@ -8,10 +10,8 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 dt = 0
-obstacle_1 = Obstacle((100, 100), (50, 50))
 
-obstacles = [obstacle_1]
-
+obstacles = spawn_objects((0, 0, screen.get_width(), screen.get_height()), (100, 100), (50, 50), 10)
 
 character = Character((screen.get_width() / 2, screen.get_height() / 2),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
 
