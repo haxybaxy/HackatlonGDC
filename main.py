@@ -38,7 +38,6 @@ def run_game():
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("purple")
 
-
         for player in players:
             player.reload() # Can be optimized but this should do the trick
 
@@ -70,9 +69,7 @@ def run_game():
         pygame.display.flip()
 
         # limits FPS to 60
-        # dt is delta time in seconds since last frame, used for framerate-
-        # independent physics.
-        dt = clock.tick(60) / 1000
+        clock.tick(60)
 
     pygame.quit()
 
