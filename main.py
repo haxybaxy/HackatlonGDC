@@ -9,7 +9,7 @@ clock = pygame.time.Clock()
 running = True
 dt = 0
 obstacle = Obstacle((100, 100), (50, 50))
-character = Character((screen.get_width() / 2, screen.get_height() / 2), boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=[obstacle])
+character = Character((screen.get_width() / 2, screen.get_height() / 2),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=[obstacle])
 
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
@@ -40,6 +40,10 @@ while running:
         character.move_in_direction("right")
     if keys[pygame.K_RETURN]:
         character.add_rotate(5)
+    if keys[pygame.K_BACKSPACE]:
+        character.add_rotate(-5)
+    if keys[pygame.K_SPACE]:
+        character.shoot()
 
     # flip() the display to put your work on screen
     pygame.display.flip()

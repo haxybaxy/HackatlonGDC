@@ -5,7 +5,7 @@ from utils import find_hit_point_on_rectangle, distance_between_points
 
 
 class Character:
-    def __init__(self, starting_pos, speed=5, boundaries=None, objects=None):
+    def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None):
         self.pos = pygame.Vector2(starting_pos)
         self.speed = speed
         self.rotation = 0
@@ -13,13 +13,22 @@ class Character:
         self.distance_vision = 200
         self.objects = objects if objects is not None else []
 
+        self.screen = screen
+        self.players = []
     "<<<<FOR USERS START>>>>"
     """GETTERS"""
     def get_location(self):
+        # returns the position of the character in (x, y) format
         return self.pos
 
     def get_rotation(self):
+        # returns the rotation of the character in degrees
         return self.rotation
+
+    def get_rays(self):
+        # returns a list of rays, each represented by a tuple of the form ((start_x, start_y), (end_x, end_y), distance, hit_type)
+        # distance is None if no intersection, hit_type is "object" or "player" if intersection
+        return self.create_rays()
 
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
@@ -38,7 +47,10 @@ class Character:
         self.rotation += degrees
 
     def shoot(self):
-        rays = self.create_rays(num_rays=1, max_angle_view=1, distance=400)
+        rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000)
+        for ray in rays:
+            color = "yellow" if ray[1] == "object" else "green"
+            pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
 
     "<<<<FOR USERS END>>>>"
     """UTILITIES"""
@@ -47,10 +59,11 @@ class Character:
         if distance is None:
             distance = self.distance_vision
 
+        hit_distance = None
         rays = []
         for i in range(0, max_angle_view, max_angle_view//num_rays):
             # Reset hit_type for each ray
-            hit_type = None
+            hit_type = "none"
 
             # Middle point is 80/5 * (5-1)//2 --> max_angle_view/num_rays * (num_rays-1)//2
             # Calculate ray endpoint
@@ -71,9 +84,24 @@ class Character:
                     if current_distance < closest_distance:
                         closest_end_position = point
                         hit_type = "object"
+                        hit_distance = current_distance
+
+            for player in self.players:
+                point = find_hit_point_on_rectangle(self.pos, end_position, player.rect)
+                if point is not None:
+                    # Calculate distance to current intersection
+                    current_distance = distance_between_points(self.pos, point)
+                    # Calculate distance to current closest point
+                    closest_distance = distance_between_points(self.pos, closest_end_position)
+
+                    # Update closest point if this intersection is closer
+                    if current_distance < closest_distance:
+                        closest_end_position = point
+                        hit_type = "player"
+                        hit_distance = current_distance
 
             # Add the ray with its closest intersection point (or original endpoint if no intersection)
-            rays.append([(self.pos, closest_end_position), hit_type])
+            rays.append([(self.pos, closest_end_position), hit_distance, hit_type])
 
         return rays
 
