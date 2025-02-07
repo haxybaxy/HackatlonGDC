@@ -21,13 +21,13 @@ class MyBot():
 
         # Should return a dictionary of moves, for example:
         actions = {
-            "forward": 0,
-            "right": 0,
-            "down": 0,
-            "left": 0,
+            "forward": True,
+            "right": False,
+            "down": False,
+            "left": False,
             "rotate": 0,
-            "shoot": False
-            }
+            "shoot": True
+            } # This will make the bot go forward and shoot
         # Include even non used variables
 
         return actions

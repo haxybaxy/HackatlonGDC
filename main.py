@@ -49,6 +49,26 @@ def run_game():
                 player.draw(screen)
                 actions = player.related_bot.act(player.get_info())
                 print("Bot would like to do:", actions)
+                actions = {
+                    "forward": True,
+                    "right": False,
+                    "down": False,
+                    "left": False,
+                    "rotate": 0,
+                    "shoot": False
+                }
+                if actions["forward"]:
+                    player.move_in_direction("forward")
+                if actions["right"]:
+                    player.move_in_direction("right")
+                if actions["down"]:
+                    player.move_in_direction("down")
+                if actions["left"]:
+                    player.move_in_direction("left")
+                if actions["rotate"]:
+                    player.add_rotate(actions["rotate"])
+                if actions["shoot"]:
+                    player.shoot()
 
         # Check if game is over
         if len(alive_players) == 1:
@@ -61,6 +81,7 @@ def run_game():
         for obstacle in obstacles:
             obstacle.draw(screen)
 
+        #Use for manual override
         """
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
