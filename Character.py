@@ -47,7 +47,6 @@ class Character:
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
         # This only moves the character if there is no collision with any object, improve it to be more cool
-
         original_pos = self.rect.topleft
 
         if direction == "forward":
@@ -72,10 +71,20 @@ class Character:
         self.rotation += degrees
 
     def shoot(self):
-        rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000)
-        for ray in rays:
-            color = "yellow" if ray[1] == "object" else "green"
-            pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
+        if self.current_ammo > 0:
+            rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000)
+            for ray in rays:
+                color = "yellow" if ray[1] == "object" else "green"
+                pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
+
+            self.current_ammo -= 1
+            if self.current_ammo <= 0 and self.start_reloading_time is None:
+                self.reload()
+            else:
+                print("is reloading (technically)")
+
+        else:
+            print("no ammo")
 
     "<<<<FOR USERS END>>>>"
     """UTILITIES"""
