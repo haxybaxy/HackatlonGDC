@@ -42,6 +42,7 @@ class Env:
         self.running = True
         self.screen.fill("green")
         pygame.display.flip()
+        time.sleep(1)
 
         # TODO: add variables for parameters
         if randomize_objects:

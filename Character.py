@@ -7,6 +7,7 @@ class Character:
         self.rotation = 0
         self.max_boundaries = boundaries
         self.objects = objects if objects is not None else []
+        self.starting_pos = starting_pos
         self.rect = pygame.Rect(starting_pos, (40, 40))
 
         self.related_bot = None
@@ -109,6 +110,7 @@ class Character:
 
             self.current_ammo -= 1
             if self.current_ammo <= 0 and self.start_reloading_time is None:
+                print("is reloading", self.current_ammo)
                 self.reload()
             else:
                 print("is reloading (technically)")
@@ -119,8 +121,8 @@ class Character:
     "<<<<FOR USERS END>>>>"
     """UTILITIES"""
     def reset(self):
-        self.rect.x = 100
-        self.rect.y = 100
+        self.rect.x = self.starting_pos[0]
+        self.rect.y = self.starting_pos[1]
         self.rotation = 0
         self.health = 100
         self.current_ammo = self.max_ammo
