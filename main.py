@@ -3,8 +3,10 @@ import pygame
 from Character import Character
 from world_gen import spawn_objects
 from bot import MyBot
+
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
+#TODO: change the wait for the functions to tick relative
 
 def run_game():
 
