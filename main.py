@@ -13,7 +13,7 @@ dt = 0
 
 obstacles = spawn_objects((0, 0, screen.get_width(), screen.get_height()), (100, 100), (50, 50), 10)
 
-character = Character((screen.get_width() / 2, screen.get_height() / 2),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
+character = Character((screen.get_width()-100, screen.get_height()-100),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
 
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 

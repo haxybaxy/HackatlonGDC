@@ -8,10 +8,11 @@ class Character:
         self.rotation = 0
         self.max_boundaries = boundaries
         self.objects = objects if objects is not None else []
-        self.rect = pygame.Rect(starting_pos, (80, 80))
+        self.rect = pygame.Rect(starting_pos, (40, 40))
 
 
         """CHARACTER STATS"""
+        self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
         self.distance_vision = 200
@@ -27,6 +28,7 @@ class Character:
 
         self.screen = screen
         self.players = []
+
     "<<<<FOR USERS START>>>>"
     """GETTERS"""
     def get_location(self):
@@ -44,6 +46,8 @@ class Character:
 
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
+        # This only moves the character if there is no collision with any object, improve it to be more cool
+
         original_pos = self.rect.topleft
 
         if direction == "forward":
@@ -55,11 +59,12 @@ class Character:
         elif direction == "left":
             self.rect.x -= self.speed
 
-        # Check for collisions with objects
-        for obj in self.objects:
-            if self.rect.colliderect(obj.rect):                    # If collision occurred, revert to original position
-                self.rect.topleft = original_pos
-                return
+        if self.collision_w_objects:
+            # Check for collisions with objects
+            for obj in self.objects:
+                if self.rect.colliderect(obj.rect):                    # If collision occurred, revert to original position
+                    self.rect.topleft = original_pos
+                    return
 
         self.check_if_in_boundaries()
 
@@ -139,14 +144,14 @@ class Character:
     """PYGAME"""
     def check_if_in_boundaries(self):
         if self.max_boundaries is not None:
-            if self.rect.x < self.max_boundaries[0]:
-                self.rect.x = self.max_boundaries[0]
-            if self.rect.x > self.max_boundaries[2]:
-                self.rect.x = self.max_boundaries[2]
-            if self.rect.y < self.max_boundaries[1]:
-                self.rect.y = self.max_boundaries[1]
-            if self.rect.y > self.max_boundaries[3]:
-                self.rect.y = self.max_boundaries[3]
+            if self.rect.center[0] < self.max_boundaries[0]:
+                self.rect.center = (self.max_boundaries[0], self.rect.center[1])
+            if self.rect.center[0] > self.max_boundaries[2]:
+                self.rect.center = (self.max_boundaries[2], self.rect.center[1])
+            if self.rect.center[1] < self.max_boundaries[1]:
+                self.rect.center = (self.rect.center[0], self.max_boundaries[1])
+            if self.rect.center[1] > self.max_boundaries[3]:
+                self.rect.center = (self.rect.center[0], self.max_boundaries[3])
 
     def draw(self, screen):
         # Draw character body
