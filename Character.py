@@ -43,6 +43,13 @@ class Character:
     def get_rays(self):
         # returns a list of rays, each represented by a tuple of the form ((start_x, start_y), (end_x, end_y), distance, hit_type)
         # distance is None if no intersection, hit_type is "object" or "player" if intersection
+        # to get the values:
+        """
+        for ray in character.get_rays():
+            vector = ray[0]
+            distance = ray[1]
+            hit_type = ray[2]
+        """
         return self.create_rays()
 
     """SETTERS"""
@@ -105,7 +112,7 @@ class Character:
         return self.rect.center
 
     def create_rays(self, num_rays=5, max_angle_view=80, distance=None, damage=0):
-        # only works with odd numbers
+        # only works with odd numbers !!!!
         if distance is None:
             distance = self.distance_vision
 
@@ -185,37 +192,16 @@ class Character:
                 self.rect.center = (self.rect.center[0], self.max_boundaries[3])
 
     def draw(self, screen):
-        # Draw character body
+        # draws character body
         pygame.draw.rect(screen, "red", self.rect)
 
-        # Draw direction indicator
+        # draws direction indicator
         direction_vector = pygame.Vector2(0, -40).rotate(self.rotation)
         end_position = self.get_center() + direction_vector
         pygame.draw.line(screen, "blue", self.get_center(), end_position, 5)
 
-        # Draw rays with different colors based on hit type
+        # draws rays with different colors based on hit type
         rays = self.create_rays()
         for ray in rays:
             color = "yellow" if ray[1] == "object" else "green"
             pygame.draw.line(screen, color, ray[0][0], ray[0][1], 5)
-
-    # For debugging purposes, add this method to the Character class
-    def debug_draw(self, screen):
-        # Draw character and rays normally
-        self.draw(screen)
-
-        # Draw rectangle corners and edges for debugging
-        for obj in self.objects:
-            rect = obj.rect
-            # Draw corners
-            corners = [
-                (rect.left, rect.top),
-                (rect.right, rect.top),
-                (rect.right, rect.bottom),
-                (rect.left, rect.bottom)
-            ]
-            for corner in corners:
-                pygame.draw.circle(screen, "red", corner, 3)
-
-            # Draw edges
-            pygame.draw.rect(screen, "blue", rect, 1)  # Draw rect outline
