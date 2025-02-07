@@ -4,66 +4,74 @@ from Obstacle import Obstacle
 from world_gen import spawn_objects
 
 
-# pygame setup
-pygame.init()
-screen = pygame.display.set_mode((1280, 720))
-clock = pygame.time.Clock()
-running = True
-dt = 0
+def run_game():
 
-obstacles = spawn_objects((0, 0, screen.get_width(), screen.get_height()), (100, 100), (50, 50), 10)
+    """VARIABLES"""
+    pygame.init()
+    screen = pygame.display.set_mode((1280, 720))
+    clock = pygame.time.Clock()
+    running = True
 
-character = Character((screen.get_width()-100, screen.get_height()-100),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
+    """SETTING UP OBJECTS"""
+    obstacles = spawn_objects((0, 0, screen.get_width(), screen.get_height()), (100, 100), (50, 50), 10)
 
-player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
 
-players = [character]
+    """SETTING UP CHARACTERS >>> UPDATE THIS"""
+    character = Character((screen.get_width()-100, screen.get_height()-100),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
+    character2 = Character((0, 0),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
 
-while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    players = [character, character2]
 
-    # fill the screen with a color to wipe away anything from last frame
-    screen.fill("purple")
-
-    #pygame.draw.circle(screen, "red", player_pos, 40)
-
+    # Here we setup player lists for each player once we created all players
     for player in players:
-        player.reload()
+        temp = players.copy()
+        temp.remove(player)
+        player.players = temp
 
-    for player in players:
-        player.reload()
-        player.draw(screen)
-        player.debug_draw(screen)
+    while running:
+        # poll for events
+        # pygame.QUIT event means the user clicked X to close your window
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-    for obstacle in obstacles:
-        obstacle.draw(screen)
+        # fill the screen with a color to wipe away anything from last frame
+        screen.fill("purple")
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        character.move_in_direction("forward")
-    if keys[pygame.K_s]:
-        character.move_in_direction("down")
-    if keys[pygame.K_a]:
-        character.move_in_direction("left")
-    if keys[pygame.K_d]:
-        character.move_in_direction("right")
-    if keys[pygame.K_RETURN]:
-        character.add_rotate(5)
-    if keys[pygame.K_BACKSPACE]:
-        character.add_rotate(-5)
-    if keys[pygame.K_SPACE]:
-        character.shoot()
 
-    # flip() the display to put your work on screen
-    pygame.display.flip()
+        for player in players:
+            player.reload() # Can be optimized but this should do the trick
 
-    # limits FPS to 60
-    # dt is delta time in seconds since last frame, used for framerate-
-    # independent physics.
-    dt = clock.tick(60) / 1000
+        for player in players:
+            player.reload()
+            player.draw(screen)
+            player.debug_draw(screen)
 
-pygame.quit()
+        for obstacle in obstacles:
+            obstacle.draw(screen)
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w]:
+            character.move_in_direction("forward")
+        if keys[pygame.K_s]:
+            character.move_in_direction("down")
+        if keys[pygame.K_a]:
+            character.move_in_direction("left")
+        if keys[pygame.K_d]:
+            character.move_in_direction("right")
+        if keys[pygame.K_RETURN]:
+            character.add_rotate(5)
+        if keys[pygame.K_BACKSPACE]:
+            character.add_rotate(-5)
+        if keys[pygame.K_SPACE]:
+            character.shoot()
+
+        # flip() the display to put your work on screen
+        pygame.display.flip()
+
+        # limits FPS to 60
+        # dt is delta time in seconds since last frame, used for framerate-
+        # independent physics.
+        dt = clock.tick(60) / 1000
+
+    pygame.quit()
