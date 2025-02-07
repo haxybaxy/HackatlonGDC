@@ -40,6 +40,8 @@ class Env:
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
+        self.screen.fill("green")
+        pygame.display.flip()
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -51,16 +53,16 @@ class Env:
 
             self.obstacles = self.OG_obstacles
 
+        self.players = self.OG_players.copy()
+        self.bots = self.OG_bots
         if randomize_players:
-            self.OG_bots.shuffle()
-            for index in range(len(self.OG_players)):
-                self.players[index].related_bot = self.OG_bots[index] # ensuring bots change location
+            self.bots = self.bots.shuffle()
+            for index in range(len(self.players)):
+                self.players[index].related_bot = self.bots[index] # ensuring bots change location
 
         else:
-            self.players = self.OG_players
             for index in range(len(self.players)):
-                self.players[index].related_bot = self.OG_bots[index]
-            self.bots = self.OG_bots
+                self.players[index].related_bot = self.bots[index]
 
         # Here we setup player lists for each player once we created all players
         for player in self.players:
@@ -144,6 +146,7 @@ if __name__ == "__main__":
     while True:
         if st + 10 < time.time():
             environment.reset()
+            st = time.time()
         if not environment.step():
             break
         else:
