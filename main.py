@@ -1,10 +1,8 @@
 import time
-
 import pygame
 from Character import Character
-from Obstacle import Obstacle
 from world_gen import spawn_objects
-
+from bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
@@ -16,9 +14,10 @@ def run_game():
     clock = pygame.time.Clock()
     running = True
 
+    bots = []
+
     """SETTING UP OBJECTS"""
     obstacles = spawn_objects((0, 0, screen.get_width(), screen.get_height()), (100, 100), (50, 50), 10)
-
 
     """SETTING UP CHARACTERS >>> UPDATE THIS"""
     character = Character((screen.get_width()-100, screen.get_height()-100),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
@@ -48,6 +47,8 @@ def run_game():
                 alive_players.append(player)
                 player.reload()
                 player.draw(screen)
+                actions = player.related_bot.act(player.get_info())
+                print("Bot would like to do:", actions)
 
         # Check if game is over
         if len(alive_players) == 1:
@@ -60,6 +61,7 @@ def run_game():
         for obstacle in obstacles:
             obstacle.draw(screen)
 
+        """
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             character.move_in_direction("forward")
@@ -74,7 +76,7 @@ def run_game():
         if keys[pygame.K_BACKSPACE]:
             character.add_rotate(-5)
         if keys[pygame.K_SPACE]:
-            character.shoot()
+            character.shoot()"""
 
         # flip() the display to put your work on screen
         pygame.display.flip()

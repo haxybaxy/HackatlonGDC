@@ -2,7 +2,6 @@ import time
 import pygame
 from utils import find_hit_point_on_rectangle, distance_between_points
 
-
 class Character:
     def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None):
         self.rotation = 0
@@ -10,6 +9,7 @@ class Character:
         self.objects = objects if objects is not None else []
         self.rect = pygame.Rect(starting_pos, (40, 40))
 
+        self.related_bot = None
 
         """CHARACTER STATS"""
         self.username = "player {}".format(id(self)) # add way to personalize
@@ -33,6 +33,15 @@ class Character:
 
     "<<<<FOR USERS START>>>>"
     """GETTERS"""
+    def get_info(self):
+        # returns a dictionary with the following keys: "location", "rotation", "rays" and "current_ammo"
+        return {
+            "location": self.get_location(),
+            "rotation": self.get_rotation(),
+            "rays": self.get_rays(),
+            "current_ammo": self.current_ammo
+        }
+
     def get_location(self):
         # returns the position of the character in (x, y) format
         return self.get_center()

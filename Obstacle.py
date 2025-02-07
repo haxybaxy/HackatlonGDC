@@ -1,7 +1,5 @@
 import pygame
 
-
-
 class Obstacle:
     def __init__(self, pos, size):
         self.pos = pygame.Vector2(pos)
