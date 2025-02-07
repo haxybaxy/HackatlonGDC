@@ -146,7 +146,7 @@ if __name__ == "__main__":
     environment.set_players_bots_objects(players, bots) # Environment should be ready
     st = time.time()
     while True:
-        if st + 10 < time.time():
+        if st + 15 < time.time():
             environment.reset()
             st = time.time()
         if not environment.step():
