@@ -3,7 +3,7 @@ import numpy as np
 
 def intersection_numpy(ray_vector, rectangle_vector):
     """
-    Finds the intersection point of two lines using NumPy.  This is generally faster
+    Finds the intersection point of two lines using NumPy. This is generally faster
     than the pure Python implementation, especially for many calculations.
 
     Args:
@@ -28,22 +28,24 @@ def intersection_numpy(ray_vector, rectangle_vector):
         else:
             return None  # Parallel
 
-    # Solve for the parameters t and u (using t = x[0], u = -x[1])
+    # Solve for the parameters t and s
     try:
         x = np.linalg.solve(A, b)
     except np.linalg.LinAlgError:  # Handle singular matrix (shouldn't happen if we checked det, but good practice)
         return None
 
-    t, u = x[0], -x[1]
+    t, s = x[0], x[1]
 
     # Check if the intersection is within the line segments.
-    if 0 <= t <= 1 and 0 <= u <= 1:
+    if 0 <= t <= 1 and 0 <= s <= 1:
         return p1 + t * (p2 - p1)
     else:
         return None
 
+
 def distance_between_points(point1, point2):
     return np.linalg.norm(np.array(point1) - np.array(point2))
+
 
 def find_hit_point_on_rectangle(start, end, rect):
     # Do not modify rect.x and rect.y!
@@ -71,7 +73,6 @@ def find_hit_point_on_rectangle(start, end, rect):
                 last_hit_point = p
 
     return last_hit_point
-
 
 
 

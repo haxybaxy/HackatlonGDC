@@ -13,7 +13,7 @@ class Character:
         self.distance_vision = 200
         self.objects = objects if objects is not None else []
 
-
+    "<<<<FOR USERS START>>>>"
     """GETTERS"""
     def get_location(self):
         return self.pos
@@ -37,16 +37,24 @@ class Character:
     def add_rotate(self, degrees):
         self.rotation += degrees
 
-    """UTILITIES"""
+    def shoot(self):
+        rays = self.create_rays(num_rays=1, max_angle_view=1, distance=400)
 
-    def create_rays(self):
+    "<<<<FOR USERS END>>>>"
+    """UTILITIES"""
+    def create_rays(self, num_rays=5, max_angle_view=80, distance=None):
+        # only works with odd numbers
+        if distance is None:
+            distance = self.distance_vision
+
         rays = []
-        for i in range(0, 80, 16):
+        for i in range(0, max_angle_view, max_angle_view//num_rays):
             # Reset hit_type for each ray
             hit_type = None
 
+            # Middle point is 80/5 * (5-1)//2 --> max_angle_view/num_rays * (num_rays-1)//2
             # Calculate ray endpoint
-            direction_vector = pygame.Vector2(0, -self.distance_vision).rotate(i - 32).rotate(self.rotation)
+            direction_vector = pygame.Vector2(0, -distance).rotate(i - max_angle_view/num_rays * (num_rays-1)//2).rotate(self.rotation)
             end_position = self.pos + direction_vector
             closest_end_position = end_position  # Store the closest intersection point
 
