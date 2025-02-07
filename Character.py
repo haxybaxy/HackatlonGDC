@@ -1,3 +1,5 @@
+import time
+
 import pygame
 import math
 
@@ -7,11 +9,23 @@ from utils import find_hit_point_on_rectangle, distance_between_points
 class Character:
     def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None):
         self.pos = pygame.Vector2(starting_pos)
-        self.speed = speed
         self.rotation = 0
         self.max_boundaries = boundaries
-        self.distance_vision = 200
         self.objects = objects if objects is not None else []
+
+        """CHARACTER STATS"""
+        self.health = 100
+        self.speed = speed
+        self.distance_vision = 200
+        self.damage = 20
+        self.delay = 1 #(between shoots), a lot of time so it is longer but more intense
+        self.max_ammo = 30
+        self.current_ammo = self.max_ammo
+        self.time_to_reload = 3
+
+        """TIMERS"""
+        self.start_reloading_time = None
+        self.last_shoot_time = None
 
         self.screen = screen
         self.players = []
@@ -104,6 +118,14 @@ class Character:
             rays.append([(self.pos, closest_end_position), hit_distance, hit_type])
 
         return rays
+
+    def reload(self):
+        if self.start_reloading_time is None:
+            self.start_reloading_time = time.time()
+        else:
+            if time.time() - self.start_reloading_time >= self.time_to_reload:
+                self.current_ammo = self.max_ammo
+                self.start_reloading_time = None
 
     """PYGAME"""
     def check_if_in_boundaries(self):

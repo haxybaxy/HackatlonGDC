@@ -8,10 +8,16 @@ screen = pygame.display.set_mode((1280, 720))
 clock = pygame.time.Clock()
 running = True
 dt = 0
-obstacle = Obstacle((100, 100), (50, 50))
-character = Character((screen.get_width() / 2, screen.get_height() / 2),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=[obstacle])
+obstacle_1 = Obstacle((100, 100), (50, 50))
+
+obstacles = [obstacle_1]
+
+
+character = Character((screen.get_width() / 2, screen.get_height() / 2),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
 
 player_pos = pygame.Vector2(screen.get_width() / 2, screen.get_height() / 2)
+
+players = [character]
 
 while running:
     # poll for events
@@ -25,9 +31,16 @@ while running:
 
     #pygame.draw.circle(screen, "red", player_pos, 40)
 
-    character.draw(screen)
-    character.debug_draw(screen)
-    obstacle.draw(screen)
+    for player in players:
+        player.reload()
+
+    for player in players:
+        player.reload()
+        player.draw(screen)
+        player.debug_draw(screen)
+
+    for obstacle in obstacles:
+        obstacle.draw(screen)
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
