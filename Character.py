@@ -24,6 +24,7 @@ class Character:
         self.current_ammo = self.max_ammo
         self.time_to_reload = 3
         self.alive = True
+        self.is_reloading = False
 
         """TIMERS"""
         self.start_reloading_time = None
@@ -110,6 +111,7 @@ class Character:
 
             self.current_ammo -= 1
             if self.current_ammo <= 0 and self.start_reloading_time is None:
+                self.is_reloading = True
                 print("is reloading", self.current_ammo)
                 self.reload()
             else:
@@ -127,6 +129,8 @@ class Character:
         self.health = 100
         self.current_ammo = self.max_ammo
         self.alive = True
+        self.is_reloading = False
+        self.start_reloading_time = None
 
     def get_center(self):
         return self.rect.center
@@ -185,12 +189,13 @@ class Character:
         return rays
 
     def reload(self):
-        if self.start_reloading_time is None:
-            self.start_reloading_time = time.time()
-        else:
-            if time.time() - self.start_reloading_time >= self.time_to_reload:
-                self.current_ammo = self.max_ammo
-                self.start_reloading_time = None
+        if self.is_reloading:
+            if self.start_reloading_time is None:
+                self.start_reloading_time = time.time()
+            else:
+                if time.time() - self.start_reloading_time >= self.time_to_reload:
+                    self.current_ammo = self.max_ammo
+                    self.start_reloading_time = None
 
     """PYGAME"""
     def do_damage(self, damage, by_player=None):
