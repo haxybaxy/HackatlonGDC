@@ -23,7 +23,9 @@ def run_game():
 
     """SETTING UP CHARACTERS >>> UPDATE THIS"""
     character = Character((screen.get_width()-100, screen.get_height()-100),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
+    character.related_bot = MyBot()
     character2 = Character((0, 0),  screen, boundaries=(0, 0, screen.get_width(), screen.get_height()), objects=obstacles)
+    character2.related_bot = MyBot()
 
     players = [character, character2]
 
@@ -51,14 +53,7 @@ def run_game():
                 player.draw(screen)
                 actions = player.related_bot.act(player.get_info())
                 print("Bot would like to do:", actions)
-                actions = {
-                    "forward": True,
-                    "right": False,
-                    "down": False,
-                    "left": False,
-                    "rotate": 0,
-                    "shoot": False
-                }
+
                 if actions["forward"]:
                     player.move_in_direction("forward")
                 if actions["right"]:

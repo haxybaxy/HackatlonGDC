@@ -66,6 +66,7 @@ class Env:
 
         # Here we setup player lists for each player once we created all players
         for player in self.players:
+            player.reset()
             temp = self.players.copy()
             temp.remove(player)
             player.players = temp # Setting up players for each player

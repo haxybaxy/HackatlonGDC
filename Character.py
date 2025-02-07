@@ -118,6 +118,14 @@ class Character:
 
     "<<<<FOR USERS END>>>>"
     """UTILITIES"""
+    def reset(self):
+        self.rect.x = 100
+        self.rect.y = 100
+        self.rotation = 0
+        self.health = 100
+        self.current_ammo = self.max_ammo
+        self.alive = True
+
     def get_center(self):
         return self.rect.center
 
