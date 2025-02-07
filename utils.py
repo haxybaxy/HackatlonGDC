@@ -31,7 +31,7 @@ def intersection_numpy(ray_vector, rectangle_vector):
     # Solve for the parameters t and s
     try:
         x = np.linalg.solve(A, b)
-    except np.linalg.LinAlgError:  # Handle singular matrix (shouldn't happen if we checked det, but good practice)
+    except np.linalg.LinAlgError:  # Handle singular matrix (shouldn't happen if we checked det, but better to check)
         return None
 
     t, s = x[0], x[1]
