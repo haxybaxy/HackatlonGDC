@@ -72,10 +72,15 @@ class Character:
 
     def shoot(self):
         if self.current_ammo > 0:
+            if self.last_shoot_time is not None and time.time() - self.last_shoot_time < self.delay:
+                print("still on delay")
+                return False
+
             rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000)
             for ray in rays:
                 color = "yellow" if ray[1] == "object" else "green"
                 pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
+            self.last_shoot_time = time.time()
 
             self.current_ammo -= 1
             if self.current_ammo <= 0 and self.start_reloading_time is None:
