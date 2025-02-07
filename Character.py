@@ -1,8 +1,5 @@
 import time
-
 import pygame
-import math
-
 from utils import find_hit_point_on_rectangle, distance_between_points
 
 
@@ -47,6 +44,8 @@ class Character:
 
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
+        original_pos = self.rect.topleft
+
         if direction == "forward":
             self.rect.y -= self.speed
         elif direction == "right":
@@ -55,6 +54,12 @@ class Character:
             self.rect.y += self.speed
         elif direction == "left":
             self.rect.x -= self.speed
+
+        # Check for collisions with objects
+        for obj in self.objects:
+            if self.rect.colliderect(obj.rect):                    # If collision occurred, revert to original position
+                self.rect.topleft = original_pos
+                return
 
         self.check_if_in_boundaries()
 

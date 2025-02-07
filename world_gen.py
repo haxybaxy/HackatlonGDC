@@ -1,5 +1,4 @@
 import random
-
 from Obstacle import Obstacle
 
 
