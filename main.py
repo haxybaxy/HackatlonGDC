@@ -1,3 +1,5 @@
+import time
+
 import pygame
 from Character import Character
 from Obstacle import Obstacle
@@ -38,13 +40,20 @@ def run_game():
         # fill the screen with a color to wipe away anything from last frame
         screen.fill("purple")
 
+        alive_players = []
         for player in players:
-            player.reload() # Can be optimized but this should do the trick
+            if player.alive:
+                alive_players.append(player)
+                player.reload()
+                player.draw(screen)
 
-        for player in players:
-            player.reload()
-            player.draw(screen)
-            player.debug_draw(screen)
+        # Check if game is over
+        if len(alive_players) == 1:
+            print("Game Over, winner is:", alive_players[0].username)
+            screen.fill("green") # "Victory Screen" improve this
+            pygame.display.flip()
+            time.sleep(2)
+            running = False
 
         for obstacle in obstacles:
             obstacle.draw(screen)

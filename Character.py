@@ -22,6 +22,7 @@ class Character:
         self.max_ammo = 30
         self.current_ammo = self.max_ammo
         self.time_to_reload = 3
+        self.alive = True
 
         """TIMERS"""
         self.start_reloading_time = None
@@ -176,7 +177,14 @@ class Character:
     def do_damage(self, damage, by_player=None):
         self.health -= damage
         if self.health <= 0:
-            print("player died, killer was:", by_player.username)
+            if self.alive:
+                self.alive = False
+                self.rect.x = -1000
+                self.rect.y = -1000
+                self.current_ammo = 0
+                print("player died, killer was:", by_player.username)
+            else:
+                print("player is already dead (IGNORE THIS)")
         else:
             print("player took damage, current health:", self.health)
 
