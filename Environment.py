@@ -7,16 +7,31 @@ from bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
-screen = pygame.display.set_mode((100, 100))
+screen = pygame.display.set_mode((500, 500))
+
+class GameTheme:
+    def __init__(self):
+        self.colors = {
+            'background': (34, 39, 46), #DArk Blue
+            'grass': [(34, 139, 34), (46, 154, 46)], #Two shades of Green
+            'obstacle': (75, 83, 88), #Grey
+            'grid': (50, 50, 50, 30), #Semi-transparent Grid
+            'player_trail': (255, 255, 255, 30), #Semi-transparent White
+        }
+        self.grid_size = 50
+        self.grid_line_width = 1
 
 class Env:
-    def __init__(self, should_display=False, width=1280, height=1280, n_of_obstacles=10):
+    def __init__(self, should_display=False, width=1280, height=700, n_of_obstacles=10):
         pygame.init()
         self.width = width
         self.height = height
         self.screen = pygame.display.set_mode((width, height))
         self.clock = pygame.time.Clock()
         self.running = True
+        self.theme = GameTheme()
+
+        self.background = self.create_background() #Create background surface once (below)
 
         self.display = should_display # If you want to display the game or not
 
@@ -33,6 +48,45 @@ class Env:
         self.players = None
         self.obstacles = None
 
+    def create_background(self):
+        background = pygame.Surface((self.width, self.height))
+        background.fill(self.theme.colors['background'])
+
+        #Grass pattern
+        for x in range(0, self.width, 10):
+            for y in range(0, self.height, 10):
+                if random.random() < 0.3: #30% chance for grass detail
+                    size = random.randint(2,4)
+                    color = random.choice(self.theme.colors['grass'])
+                    pygame.draw.circle(background, color, (x,y), size)
+
+        #Grid
+        grid_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        for x in range(0, self.width, self.theme.grid_size):
+            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.height), self.theme.grid_line_width)
+        for y in range(0, self.height, self.theme.grid_size):
+            pygame.draw.line(grid_surface, self.theme.colors['grid'],
+                             (0, y), (self.width, y), self.theme.grid_line_width)
+
+        background.blit(grid_surface, (0, 0))
+        return background
+
+    def draw_obstacle(self, obstacle):
+        #Shadow
+        shadow_offset = 5
+        shadow_rect = obstacle.rect.copy()
+        shadow_rect.x += shadow_offset
+        shadow_rect.y += shadow_offset
+        pygame.draw.rect(self.screen, (0,0,0,50), shadow_rect, border_radius=8)
+
+        #Main obstacle
+        pygame.draw.rect(self.screen, self.theme.colors['obstacle'], obstacle.rect, border_radius=8)
+
+        #Highlight
+        highlight = pygame.Surface((obstacle.rect.width, obstacle.rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(highlight, (255, 255, 255, 30), highlight.get_rect(), border_radius=8)
+        self.screen.blit(highlight, obstacle.rect)
+
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
         self.OG_bots = bots
@@ -45,7 +99,7 @@ class Env:
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
-        self.screen.fill("green")
+        self.screen.blit(self.background, (0, 0))
         pygame.display.flip()
         time.sleep(1)
 
@@ -78,18 +132,29 @@ class Env:
             temp.remove(player)
             player.players = temp # Setting up players for each player
             player.objects = self.obstacles # Setting up obstacles for each player
+            if hasattr(player, 'previous_positions'):
+                player.previous_positions = []
 
     def step(self, debugging=False):
-        # fill the screen with a color to wipe away anything from last frame
-        self.screen.fill("purple")
+        #Background
+        self.screen.blit(self.background, (0,0))
 
         players_info = {}
         alive_players = []
+
+        #Player trials
+        for player in self.players:
+            if player.alive:
+                if hasattr(player, 'previous_positions'):
+                    for pos in player.previous_positions[-10:]:
+                        pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos, player.rect.width // 2)
+
+
         for player in self.players:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
-                player.draw(screen)
+                player.draw(self.screen)
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -106,20 +171,32 @@ class Env:
                 if actions["shoot"]:
                     player.shoot()
 
+                #Store position for trial
+                if not hasattr(player, 'previous_positions'):
+                    player.previous_positions = []
+                player.previous_positions.append(player.rect.center)
+                if len(player.previous_positions) > 10:
+                    player.previous_positions.pop(0)
+
             players_info[player.username] = player.get_info()
 
         # Check if game is over
         if len(alive_players) == 1:
             print("Game Over, winner is:", alive_players[0].username)
-            self.screen.fill("green")  # "Victory Screen" improve this
+            winner_screen = self.background.copy()
+            font = pygame.font.Font(None, 74)
+            text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(self.width/2, self.height/2))
+            winner_screen.blit(text, text_rect)
+            self.screen.blit(winner_screen, (0, 0))
             pygame.display.flip()
-            time.sleep(0.5) # remove this if not needed
+            time.sleep(0.5) # remove this if not needed - I sure need it
 
             #self.running = False
             return True, players_info # Game is over
 
         for obstacle in self.obstacles:
-            obstacle.draw(screen)
+            self.draw_obstacle(obstacle)
 
         # flip() the display to put your work on screen
         pygame.display.flip()
