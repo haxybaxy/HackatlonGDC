@@ -118,9 +118,12 @@ class Env:
         # flip() the display to put your work on screen
         pygame.display.flip()
 
-        players_info["general"] = {
-            "total_players": len(self.players),
-            "alive_players": len(alive_players)
+        new_dic = {
+            "general_info" : {
+                "total_players": len(self.players),
+                "alive_players": len(alive_players)
+            },
+            "players_info": players_info
         }
 
         return False, players_info

@@ -25,6 +25,7 @@ class Character:
         self.time_to_reload = 3
         self.alive = True
         self.is_reloading = False
+        self.rays = []
 
         # Useful to train
         self.total_kills = 0
@@ -73,7 +74,8 @@ class Character:
             distance = ray[1]
             hit_type = ray[2]
         """
-        return self.create_rays()
+        self.rays = self.create_rays()
+        return self.rays
 
     """SETTERS"""
     def move_in_direction(self, direction):  # forward, right, down, left
@@ -111,15 +113,14 @@ class Character:
                 print("still on delay")
                 return False
 
-            rays = self.create_rays(num_rays=1, max_angle_view=1, distance=5000, damage=self.damage)
-            for ray in rays:
-                if ray[2] == "player":
-                    print("hit player, did damage", self.damage)
-                    color = "red"
-                elif ray[2] == "object":
-                    color = "yellow"
-                else:
-                    color = "gray"
+            ray  = self.create_rays(num_rays=1, max_angle_view=1, distance=5000, damage=self.damage)[0]
+            if ray[2] == "player":
+                print("hit player, did damage", self.damage)
+                color = "red"
+            elif ray[2] == "object":
+                color = "yellow"
+            else:
+                color = "gray"
 
                 pygame.draw.line(self.screen, color, ray[0][0], ray[0][1], 5)
             self.last_shoot_time = time.time()
@@ -147,6 +148,7 @@ class Character:
         self.is_reloading = False
         self.start_reloading_time = None
         self.last_shoot_time = None
+        self.rays = []
         self.total_kills = 0
         self.damage_dealt = 0
         self.meters_moved = 0
@@ -260,8 +262,8 @@ class Character:
         pygame.draw.line(screen, "blue", self.get_center(), end_position, 5)
 
         # Draw rays with different colors based on hit type
-        rays = self.create_rays()
-        for ray in rays:
+
+        for ray in self.rays:
             color = "yellow" if ray[1] == "object" else "green"
             pygame.draw.line(screen, color, ray[0][0], ray[0][1], 5)
 
