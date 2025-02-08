@@ -9,7 +9,7 @@ from bot import MyBot
 
 
 class Env:
-    def __init__(self, should_display=False, width=1280, height=720):
+    def __init__(self, should_display=False, width=1280, height=1280):
         pygame.init()
         self.width = width
         self.height = height
