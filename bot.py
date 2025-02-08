@@ -19,8 +19,6 @@ class MyBot():
         }
         """
 
-
-
         # Should return a dictionary of moves, for example:
         actions = {
             "forward": True,
