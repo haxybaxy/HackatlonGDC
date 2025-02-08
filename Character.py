@@ -172,7 +172,7 @@ class Character:
             # Calculate ray endpoint
             direction_vector = pygame.Vector2(0, -distance).rotate(i - max_angle_view/num_rays * (num_rays-1)//2).rotate(self.rotation)
             end_position = self.get_center() + direction_vector
-            closest_end_position = end_position  # Store the closest intersection point
+            closest_end_position = (end_position[0], end_position[1])  # Store the closest intersection point
 
             # Check collision with each object
             for object in self.objects:
@@ -185,7 +185,7 @@ class Character:
 
                     # Update closest point if this intersection is closer
                     if current_distance < closest_distance:
-                        closest_end_position = point
+                        closest_end_position = (point[0], point[1])
                         hit_type = "object"
                         hit_distance = current_distance
 
@@ -205,7 +205,7 @@ class Character:
 
                     # Update closest point if this intersection is closer
                     if current_distance < closest_distance:
-                        closest_end_position = point
+                        closest_end_position = (point[0], point[1])
                         hit_type = "player"
                         hit_distance = current_distance
 

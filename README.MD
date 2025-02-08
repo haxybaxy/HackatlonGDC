@@ -86,7 +86,7 @@ Each step of the environment returns a dictionary containing game state informat
         "Ninja": {
             "location": [100, 200],
             "rotation": 90,
-            "rays": [[((1125, 625), Vector2(1114.53, 824.726)), None, 'none'], [((1125, 625), Vector2(1059.89, 814.104)), None, 'none'], [((1125, 625), Vector2(1010.28, 788.83)), None, 'none'], [((1125, 625), Vector2(969.571, 750.864)), None, 'none'], [((1125, 625), Vector2(940.899, 703.146)), None, 'none']], 
+            "rays": [[((1125, 625), (1114.53, 824.726)), None, 'none'], [((1125, 625), (1059.89, 814.104)), None, 'none'], [((1125, 625), (1010.28, 788.83)), None, 'none'], [((1125, 625), (969.571, 750.864)), None, 'none'], [((1125, 625), (940.899, 703.146)), None, 'none']], 
             "current_ammo": 15,
             "alive": True,
             "kills": 1,
@@ -97,7 +97,7 @@ Each step of the environment returns a dictionary containing game state informat
         "Faze Jarvis": {
             "location": [300, 400],
             "rotation": 45,
-            "rays": [[((80, 10), Vector2(-48.5575, 163.209)), None, 'none'], [((80, 10), Vector2(-85.8075, 121.839)), None, 'none'], [((80, 10), Vector2(-110.211, 71.8034)), None, 'none'], [((80, 10), Vector2(-119.878, 16.9799)), None, 'none'], [((80, 10), Vector2(-114.059, -38.3844)), None, 'none']],
+            "rays": [[((1125, 645), (929.370479853239, 603.4176618364475)), None, 'none'], [((1125, 645), (948.4104814282149, 551.1056874428214)), None, 'none'], [((1125, 645), (981.1320399322702, 506.06832590820005)), None, 'none'], [((1125, 645), (1094.4004357329502, 592.0)), 61.19912853410015, 'object'], [((1125, 645), (1111.7856158493116, 592.0)), 54.62252235554455, 'object']],
             "current_ammo": 10,
             "alive": False,
             "kills": 0,
@@ -114,7 +114,7 @@ Each step of the environment returns a dictionary containing game state informat
 - **`players_info`**: Contains detailed data about each player's state.
   - **`location`**: Represents the current coordinates of the player.
   - **`rotation`**: The angle at which the player is facing.
-  - **`rays`**: List of rays used to detect objects and players. Each ray consists of:
+  - **`rays`**: List of rays (5 total) used to detect objects and players. Each ray consists of:
     - **Start and end points**
     - **Distance**
     - **Hit type** ("object" or "player")
@@ -140,7 +140,3 @@ class MyBot():
         }
         return actions
 ```
-
-## Conclusion
-This environment serves as a testing ground for AI bots, allowing them to interact and learn from their surroundings. By modifying the bots' decision-making process and analyzing the returned game state dictionary, users can enhance AI behavior and performance in the game world.
-
