@@ -7,6 +7,7 @@ from bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
+screen = pygame.display.set_mode((100, 100))
 
 class Env:
     def __init__(self, should_display=False, width=1280, height=1280, n_of_obstacles=10):
