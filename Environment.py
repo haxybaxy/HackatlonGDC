@@ -9,7 +9,7 @@ from bot import MyBot
 
 
 class Env:
-    def __init__(self, should_display=False, width=1280, height=1280):
+    def __init__(self, should_display=False, width=1280, height=1280, n_of_obstacles=10):
         pygame.init()
         self.width = width
         self.height = height
@@ -18,6 +18,10 @@ class Env:
         self.running = True
 
         self.display = should_display # If you want to display the game or not
+
+        self.n_of_obstacles = n_of_obstacles
+        self.min_obstacle_size = (50, 50)
+        self.max_obstacle_size = (100, 100)
 
         # INIT SOME VARIABLES
         self.OG_bots = None
@@ -46,11 +50,12 @@ class Env:
 
         # TODO: add variables for parameters
         if randomize_objects:
-            self.obstacles = spawn_objects((0, 0, self.width, self.height), (100, 100), (50, 50), 10)
+            self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
         else:
             if self.OG_obstacles is None:
-                self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), (100, 100),
-                                          (50, 50), 10)
+                if self.OG_obstacles is None:
+                    self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size,
+                                                      self.min_obstacle_size, self.n_of_obstacles)
 
             self.obstacles = self.OG_obstacles
 
@@ -132,7 +137,7 @@ class Env:
 if __name__ == "__main__":
     # game space is 1280x720
 
-    environment = Env()
+    environment = Env(n_of_obstacles=25)
     screen = environment.screen
 
     world_bounds = environment.get_world_bounds()
@@ -141,9 +146,9 @@ if __name__ == "__main__":
     """SETTING UP CHARACTERS >>> UPDATE THIS"""
     players = [
 
-    Character((1280 - 100, 720 - 100), screen, boundaries=world_bounds, username="Ninja"),
+    Character((world_bounds[2]-100, world_bounds[3]-100), screen, boundaries=world_bounds, username="Ninja"),
 
-    Character((0, 0), screen, boundaries=world_bounds, username="Faze Jarvis")
+    Character((world_bounds[0], world_bounds[1]), screen, boundaries=world_bounds, username="Faze Jarvis")
 
     ]
 

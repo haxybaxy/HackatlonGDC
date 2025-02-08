@@ -8,12 +8,12 @@ The environment consists of the following key elements:
 - **Players:** Characters controlled by the bots.
 - **Bots:** AI or Manually Tuned agents that make decisions based on observations.
 - **Obstacles:** Objects in the game world that players must navigate around.
-- **Game World:** A 2D grid with defined boundaries (1280x720 by default, this value should not be changed).
+- **Game World:** A 2D grid with defined boundaries (1280x1280 by default, this value should not be changed). (Note that the window might be larger than your computer supports)
 
 ## Setting Up the Environment
 To initialize the environment:
 ```python
-environment = Env()
+environment = Env() # optionally you can change the number of obstacles with the parameter n_of_obstacles
 screen = environment.screen
 world_bounds = environment.get_world_bounds()
 ```
@@ -23,8 +23,9 @@ Players and bots need to be added before running the environment.
 - An example is already provided in the script:
 ```python
 players = [
-    Character((1280 - 100, 720 - 100), screen, boundaries=world_bounds, username="Ninja"),
-    Character((0, 0), screen, boundaries=world_bounds, username="Faze Jarvis")
+    Character((world_bounds[2]-100, world_bounds[3]-100), screen, boundaries=world_bounds, username="Ninja"),
+
+    Character((world_bounds[0], world_bounds[1]), screen, boundaries=world_bounds, username="Faze Jarvis")
 ]
 
 bots = [
