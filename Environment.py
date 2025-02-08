@@ -73,10 +73,11 @@ class Env:
             player.players = temp # Setting up players for each player
             player.objects = self.obstacles # Setting up obstacles for each player
 
-    def step(self):
+    def step(self, debugging=False):
         # fill the screen with a color to wipe away anything from last frame
         self.screen.fill("purple")
 
+        players_info = {}
         alive_players = []
         for player in self.players:
             if player.alive:
@@ -84,7 +85,8 @@ class Env:
                 player.reload()
                 player.draw(screen)
                 actions = player.related_bot.act(player.get_info())
-                print("Bot would like to do:", actions)
+                if debugging:
+                    print("Bot would like to do:", actions)
                 if actions["forward"]:
                     player.move_in_direction("forward")
                 if actions["right"]:
@@ -98,7 +100,7 @@ class Env:
                 if actions["shoot"]:
                     player.shoot()
 
-            player_info = player.get_info()
+            players_info[player.username] = player.get_info()
 
         # Check if game is over
         if len(alive_players) == 1:
@@ -108,7 +110,7 @@ class Env:
             time.sleep(0.5) # remove this if not needed
 
             #self.running = False
-            return False # Game is over
+            return True, players_info # Game is over
 
         for obstacle in self.obstacles:
             obstacle.draw(screen)
@@ -116,9 +118,12 @@ class Env:
         # flip() the display to put your work on screen
         pygame.display.flip()
 
+        players_info["general"] = {
+            "total_players": len(self.players),
+            "alive_players": len(alive_players)
+        }
 
-
-        return True
+        return False, players_info
 
 
 if __name__ == "__main__":
@@ -133,9 +138,9 @@ if __name__ == "__main__":
     """SETTING UP CHARACTERS >>> UPDATE THIS"""
     players = [
 
-    Character((1280 - 100, 720 - 100), screen, boundaries=world_bounds),
+    Character((1280 - 100, 720 - 100), screen, boundaries=world_bounds, username="Ninja"),
 
-    Character((0, 0), screen, boundaries=world_bounds)
+    Character((0, 0), screen, boundaries=world_bounds, username="Faze Jarvis")
 
     ]
 
@@ -154,12 +159,9 @@ if __name__ == "__main__":
             environment.reset()
             st = time.time()
 
-        step = environment.step()
-        i
-
-
-
-        if not step:
+        finished, info = environment.step()
+        print(info)
+        if finished:
             break
         else:
             environment.clock.tick(60)

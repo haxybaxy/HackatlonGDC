@@ -3,7 +3,7 @@ import pygame
 from utils import find_hit_point_on_rectangle, distance_between_points
 
 class Character:
-    def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None):
+    def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None, username=None):
         self.rotation = 0
         self.max_boundaries = boundaries
         self.objects = objects if objects is not None else []
@@ -13,7 +13,7 @@ class Character:
         self.related_bot = None
 
         """CHARACTER STATS"""
-        self.username = "player {}".format(id(self)) # add way to personalize
+        self.username = "player {}".format(id(self)) if username is None else username # add way to personalize
         self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
