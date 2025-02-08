@@ -98,6 +98,8 @@ class Env:
                 if actions["shoot"]:
                     player.shoot()
 
+            player_info = player.get_info()
+
         # Check if game is over
         if len(alive_players) == 1:
             print("Game Over, winner is:", alive_players[0].username)
@@ -113,6 +115,8 @@ class Env:
 
         # flip() the display to put your work on screen
         pygame.display.flip()
+
+
 
         return True
 
@@ -149,7 +153,13 @@ if __name__ == "__main__":
         if st + 15 < time.time():
             environment.reset()
             st = time.time()
-        if not environment.step():
+
+        step = environment.step()
+        i
+
+
+
+        if not step:
             break
         else:
             environment.clock.tick(60)

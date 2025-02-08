@@ -26,6 +26,12 @@ class Character:
         self.alive = True
         self.is_reloading = False
 
+        # Useful to train
+        self.total_kills = 0
+        self.damage_dealt = 0
+        self.meters_moved = 0
+        self.total_rotation = 0
+
         """TIMERS"""
         self.start_reloading_time = None
         self.last_shoot_time = None
@@ -41,7 +47,12 @@ class Character:
             "location": self.get_location(),
             "rotation": self.get_rotation(),
             "rays": self.get_rays(),
-            "current_ammo": self.current_ammo
+            "current_ammo": self.current_ammo,
+            "alive": self.alive,
+            "kills": self.total_kills,
+            "damage_dealt": self.damage_dealt,
+            "meters_moved": self.meters_moved,
+            "total_rotation": self.total_rotation
         }
 
     def get_location(self):
@@ -78,17 +89,21 @@ class Character:
         elif direction == "left":
             self.rect.x -= self.speed
 
+        self.meters_moved += self.speed
+
         if self.collision_w_objects:
             # Check for collisions with objects
             for obj in self.objects:
                 if self.rect.colliderect(obj.rect):                    # If collision occurred, revert to original position
                     self.rect.topleft = original_pos
+                    self.meters_moved -= self.speed
                     return
 
         self.check_if_in_boundaries()
 
     def add_rotate(self, degrees):
         self.rotation += degrees
+        self.total_rotation += abs(degrees)
 
     def shoot(self):
         if self.current_ammo > 0:
@@ -131,6 +146,11 @@ class Character:
         self.alive = True
         self.is_reloading = False
         self.start_reloading_time = None
+        self.last_shoot_time = None
+        self.total_kills = 0
+        self.damage_dealt = 0
+        self.meters_moved = 0
+        self.total_rotation = 0
 
     def get_center(self):
         return self.rect.center
@@ -170,7 +190,11 @@ class Character:
             for player in self.players:
                 point = find_hit_point_on_rectangle(self.get_center(), end_position, player.rect)
                 if point is not None:
-                    player.do_damage(damage, self)
+                    res = player.do_damage(damage, self)
+                    if res[0]:
+                        self.total_kills += 1
+                    else:
+                        self.damage_dealt += res[1]
 
                     # Calculate distance to current intersection
                     current_distance = distance_between_points(self.get_center(), point)
@@ -207,10 +231,13 @@ class Character:
                 self.rect.y = -1000
                 self.current_ammo = 0
                 print("player died, killer was:", by_player.username)
+                return True, damage
             else:
                 print("player is already dead (IGNORE THIS)")
+                return False, 0
         else:
             print("player took damage, current health:", self.health)
+            return False, damage
 
     def check_if_in_boundaries(self):
         if self.max_boundaries is not None:
