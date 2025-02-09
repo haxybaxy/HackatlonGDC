@@ -1,4 +1,5 @@
 import math
+import random
 import time
 import pygame
 from components.character import Character
@@ -7,8 +8,19 @@ from components.my_bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
-# TODO: Check if this is needed to be run
-#screen = pygame.display.set_mode((100, 100))
+
+class GameTheme:
+    def __init__(self):
+        self.colors = {
+            'background': (34, 39, 46), #DArk Blue
+            'grass': [(34, 139, 34), (46, 154, 46)], #Two shades of Green
+            'obstacle': (75, 83, 88), #Grey
+            'grid': (50, 50, 50, 30), #Semi-transparent Grid
+            'player_trail': (255, 255, 255, 30), #Semi-transparent White
+        }
+        self.grid_size = 50
+        self.grid_line_width = 1
+
 
 class Env:
     def __init__(self, training=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
@@ -34,6 +46,9 @@ class Env:
 
         self.clock = pygame.time.Clock()
         self.running = True
+        self.theme = GameTheme()
+
+        self.background = self.create_background() #Create background surface once (below)
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
@@ -48,12 +63,53 @@ class Env:
         self.players = None
         self.obstacles = None
 
+
         """REWARD VARIABLES"""
         self.last_positions = {}
         self.last_damage = {}
         self.last_kills = {}
         self.last_health = {}
         self.visited_areas = {}
+
+
+    def create_background(self):
+        background = pygame.Surface((self.world_width, self.world_height))
+        background.fill(self.theme.colors['background'])
+
+        #Grass pattern
+        for x in range(0, self.world_width, 10):
+            for y in range(0, self.world_height, 10):
+                if random.random() < 0.3: #30% chance for grass detail
+                    size = random.randint(2,4)
+                    color = random.choice(self.theme.colors['grass'])
+                    pygame.draw.circle(background, color, (x,y), size)
+
+        #Grid
+        grid_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
+        for x in range(0, self.world_width, self.theme.grid_size):
+            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.world_height), self.theme.grid_line_width)
+        for y in range(0, self.world_height, self.theme.grid_size):
+            pygame.draw.line(grid_surface, self.theme.colors['grid'],
+                             (0, y), (self.world_width, y), self.theme.grid_line_width)
+
+        background.blit(grid_surface, (0, 0))
+        return background
+
+    def draw_obstacle(self, obstacle):
+        #Shadow
+        shadow_offset = 5
+        shadow_rect = obstacle.rect.copy()
+        shadow_rect.x += shadow_offset
+        shadow_rect.y += shadow_offset
+        pygame.draw.rect(self.screen, (0,0,0,50), shadow_rect, border_radius=8)
+
+        #Main obstacle
+        pygame.draw.rect(self.screen, self.theme.colors['obstacle'], obstacle.rect, border_radius=8)
+
+        #Highlight
+        highlight = pygame.Surface((obstacle.rect.width, obstacle.rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(highlight, (255, 255, 255, 30), highlight.get_rect(), border_radius=8)
+        self.screen.blit(highlight, obstacle.rect)
 
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
@@ -69,7 +125,7 @@ class Env:
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
         if not self.training_mode:
-            self.screen.fill("green")
+            self.screen.blit(self.background, (0, 0))
             pygame.display.flip()
             time.sleep(1)
         else:
@@ -81,6 +137,7 @@ class Env:
         self.last_kills = {}
         self.last_health = {}
         self.visited_areas = {}
+
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -111,21 +168,34 @@ class Env:
             temp.remove(player)
             player.players = temp # Setting up players for each player
             player.objects = self.obstacles # Setting up obstacles for each player
+            if hasattr(player, 'previous_positions'):
+                player.previous_positions = []
 
     def step(self, debugging=False):
         # Fill the world surface with a color to clear the previous frame.
         if not self.training_mode:
-            self.world_surface.fill("purple")
+            self.world_surface.blit(self.background, (0,0))
 
         players_info = {}
         alive_players = []
+
+        #Player trials
+        for player in self.players:
+            if player.alive:
+                if hasattr(player, 'previous_positions'):
+                    for pos in player.previous_positions[-10:]:
+                        pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos, player.rect.width // 2)
+
+
         for player in self.players:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
+
                 # Only draw if not in training mode.
                 if not self.training_mode:
                     player.draw(self.world_surface)
+        
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -141,6 +211,14 @@ class Env:
                     player.add_rotate(actions["rotate"])
                 if actions["shoot"]:
                     player.shoot()
+
+                #Store position for trial
+                if not hasattr(player, 'previous_positions'):
+                    player.previous_positions = []
+                player.previous_positions.append(player.rect.center)
+                if len(player.previous_positions) > 10:
+                    player.previous_positions.pop(0)
+
             players_info[player.username] = player.get_info()
 
         new_dic = {
@@ -152,12 +230,20 @@ class Env:
         }
 
         if len(alive_players) == 1:
+            print("Game Over, winner is:", alive_players[0].username)
             if not self.training_mode:
-                print("Game Over, winner is:", alive_players[0].username)
-                self.world_surface.fill("green")
+                winner_screen = self.background.copy()
+                font = pygame.font.Font(None, 74)
+                text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.world_width/2, self.world_height/2))
+                winner_screen.blit(text, text_rect)
+                self.world_surface.blit(winner_screen, (0, 0))
+
                 pygame.display.flip()
-                time.sleep(0.5)
-            return True, new_dic
+                time.sleep(0.5) # remove this if not needed - I sure need it
+
+            #self.running = False
+            return True, new_dic # Game is over
 
         for obstacle in self.obstacles:
             if not self.training_mode:
