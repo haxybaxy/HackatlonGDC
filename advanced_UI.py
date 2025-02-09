@@ -74,7 +74,10 @@ class game_UI:
         pygame.display.flip()
         time.sleep(0.5)  # remove this if not needed - I sure need it
 
-    def analyze_dictionary(self, dictionary):
+    def draw_everything(self, dictionary):
+        # here use self.screen and draw what you want, characters ecc ecc
+
+
 
         # retrieve the players' information from the dictionary
         players_info = dictionary.get("players_info", {})

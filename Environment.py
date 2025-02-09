@@ -211,7 +211,7 @@ class Env:
             return True, new_dic # Game is over
 
         else:
-            self.advanced_UI.analyze_dictionary(new_dic)
+            self.advanced_UI.draw_everything(new_dic)
 
         if not self.training_mode and not self.use_advanced_UI:
             for obstacle in self.obstacles:
