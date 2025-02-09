@@ -7,5 +7,5 @@ class Obstacle:
         self.rect = pygame.Rect(self.pos, self.size)
 
     def draw(self, screen):
+        #This method will be overridden in advanced_UI.py
         pygame.draw.rect(screen, "black", (self.pos.x, self.pos.y, self.size[0], self.size[1]))
-
