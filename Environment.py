@@ -309,24 +309,24 @@ class Env:
         # 1. Walking reward (one-time): if moved at all, +1
         distance_moved = math.dist(current_position, self.last_positions[bot_username])
         if distance_moved > 0:
-            reward += 1
+            reward += 0.01
 
-        # 2. Exploration reward (one-time): if entering a new grid cell, +5
+        # 2. Exploration reward (one-time): if entering a new grid cell, +1
         grid_size = 100  # Adjust as needed.
         cell = (int(current_position[0] // grid_size), int(current_position[1] // grid_size))
         if cell not in self.visited_areas[bot_username]:
-            reward += 5
+            reward += 0.1
             self.visited_areas[bot_username].add(cell)
 
         # 3. Damage reward: reward the damage inflicted this frame.
         delta_damage = damage_dealt - self.last_damage[bot_username]
         if delta_damage > 0:
-            reward += delta_damage  # 1 point per damage unit
+            reward += delta_damage * 2  # 2 point per damage unit
 
         # 4. Kill reward: massive reward for new kills.
         delta_kills = kills - self.last_kills[bot_username]
         if delta_kills > 0:
-            reward += delta_kills * 20  # 20 points per kill
+            reward += delta_kills * 15  # 15 points per kill
 
         # 5. Negative reward for missing: if a shot was fired and no damage occurred.
         if shot_fired and delta_damage <= 0:
@@ -354,8 +354,7 @@ class Env:
         self.last_kills[bot_username] = kills
         self.last_health[bot_username] = health
 
-        # --- NEW: Time-based decay multiplier ---
-        decay_rate = 0.001  # Determines how fast the multiplier decays per step.
+        decay_rate = 0.0001  # Determines how fast the multiplier decays per step.
         time_multiplier = max(0.2, 1 - decay_rate * self.steps)
         reward *= time_multiplier
 
