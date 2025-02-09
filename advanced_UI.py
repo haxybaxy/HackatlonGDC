@@ -3,17 +3,20 @@ import random
 import time
 from components.crystal_obstacle import CrystalObstacle
 
-
 class GameTheme:
     def __init__(self):
         self.colors = {
-            'background': (34, 39, 46),  # DArk Blue
-            'grass': [(34, 139, 34), (46, 154, 46)],  # Two shades of Green
-            'obstacle': (75, 83, 88),  # Grey
-            'grid': (50, 50, 50, 30),  # Semi-transparent Grid
-            'player_trail': (255, 255, 255, 30),  # Semi-transparent White
+            'background': (25, 10, 40),  # Deep purple space
+            'terrain': [
+                (147, 112, 219, 100),  # Light purple
+                (138, 43, 226, 100),  # Blue violet
+                (75, 0, 130, 100)  # Indigo
+            ],
+            'obstacle': (173, 216, 230, 180),  # Crystal blue
+            'grid': (148, 0, 211, 15),  # Very faint purple grid
+            'player_trail': (255, 255, 255, 40),  # Glowing white trail
         }
-        self.grid_size = 50
+        self.grid_size = 40
         self.grid_line_width = 1
 
 
@@ -25,45 +28,70 @@ class game_UI:
 
         self.world_width = world_width
         self.world_height = world_height
-
-        # Define obstacle parameters internally
-        self.n_of_obstacles = 10  # Match the default value in Env
-        self.min_obstacle_size = (50, 50)  # Match the default value in Env
-        self.max_obstacle_size = (100, 100)  # Match the default value in Env
-
         self.theme = GameTheme()
+
+        # Defining obstacle parameters internally
+        self.n_of_obstacles = 20
+        self.min_obstacle_size = (50, 50)
+        self.max_obstacle_size = (100, 100)
+
         self.obstacles = self.create_obstacles()
         self.background = self.create_background()
 
     def create_obstacles(self):
         obstacles = []
         for _ in range(self.n_of_obstacles):
-            # Random size within the specified range
             width = random.randint(self.min_obstacle_size[0], self.max_obstacle_size[0])
             height = random.randint(self.min_obstacle_size[1], self.max_obstacle_size[1])
             obstacle_size = (width, height)
-
-            # Random position within world bounds, ensuring obstacles don't go out of bounds
             x = random.randint(0, self.world_width - obstacle_size[0])
             y = random.randint(0, self.world_height - obstacle_size[1])
-
-            # Create the crystal obstacle
             obstacle = CrystalObstacle((x, y), obstacle_size)
             obstacles.append(obstacle)
-
         return obstacles
 
     def create_background(self):
         background = pygame.Surface((self.world_width, self.world_height))
         background.fill(self.theme.colors['background'])
 
-        # Grass pattern
-        for x in range(0, self.world_width, 10):
-            for y in range(0, self.world_height, 10):
-                if random.random() < 0.3:  # 30% chance for grass detail
-                    size = random.randint(2, 4)
-                    color = random.choice(self.theme.colors['grass'])
-                    pygame.draw.circle(background, color, (x, y), size)
+        # Create separate surface for terrain features
+        terrain_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
+
+        # Add alien terrain features (crystalline formations)
+        for _ in range(300):  # More details for richer appearance
+            x = random.randint(0, self.world_width)
+            y = random.randint(0, self.world_height)
+            size = random.randint(2, 8)
+            color = random.choice(self.theme.colors['terrain'])
+
+            # Randomly choose between different alien terrain features
+            feature_type = random.choice(['crystal', 'spore', 'star'])
+
+            if feature_type == 'crystal':
+                points = [
+                    (x, y - size),
+                    (x + size // 2, y + size // 2),
+                    (x - size // 2, y + size // 2)
+                ]
+                pygame.draw.polygon(terrain_surface, color, points)
+
+            elif feature_type == 'spore':
+                pygame.draw.circle(terrain_surface, color, (x, y), size)
+                smaller_color = list(color)
+                smaller_color[3] = 150  # More transparent
+                pygame.draw.circle(terrain_surface, tuple(smaller_color), (x, y), size // 2)
+
+            else:  # star
+                star_color = (255, 255, 255, random.randint(30, 100))
+                pygame.draw.circle(terrain_surface, star_color, (x, y), 1)
+
+        # Add ethereal fog effect
+        for _ in range(20):
+            x = random.randint(0, self.world_width)
+            y = random.randint(0, self.world_height)
+            size = random.randint(50, 200)
+            fog_color = (147, 112, 219, 5)  # Very transparent purple
+            pygame.draw.circle(terrain_surface, fog_color, (x, y), size)
 
         # Grid
         grid_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
@@ -74,6 +102,8 @@ class game_UI:
             pygame.draw.line(grid_surface, self.theme.colors['grid'],
                              (0, y), (self.world_width, y), self.theme.grid_line_width)
 
+        # Combine all layers
+        background.blit(terrain_surface, (0, 0))
         background.blit(grid_surface, (0, 0))
         return background
 
@@ -89,7 +119,6 @@ class game_UI:
         text_rect = text.get_rect(center=(self.world_width / 2, self.world_height / 2))
         winner_screen.blit(text, text_rect)
         self.screen.blit(winner_screen, (0, 0))
-
         pygame.display.flip()
         time.sleep(0.5)
 
