@@ -79,30 +79,65 @@ class Character:
         return self.rays
 
     """SETTERS"""
-    def move_in_direction(self, direction):  # forward, right, down, left
-        # This only moves the character if there is no collision with any object, improve it to be more cool
+
+    def move_in_direction(self, direction):
         original_pos = self.rect.topleft
+        move_x = 0
+        move_y = 0
 
+        # Determine movement vector based on direction
         if direction == "forward":
-            self.rect.y -= self.speed
+            move_y = -self.speed
         elif direction == "right":
-            self.rect.x += self.speed
+            move_x = self.speed
         elif direction == "down":
-            self.rect.y += self.speed
+            move_y = self.speed
         elif direction == "left":
-            self.rect.x -= self.speed
+            move_x = -self.speed
 
-        self.meters_moved += self.speed
+        # Try moving in both x and y directions independently
+        new_x = self.rect.x + move_x
+        new_y = self.rect.y + move_y
 
+        # Create temporary rects for testing each axis independently
+        temp_rect_x = self.rect.copy()
+        temp_rect_x.x = new_x
+
+        temp_rect_y = self.rect.copy()
+        temp_rect_y.y = new_y
+
+        # Check x-axis movement
+        can_move_x = True
         if self.collision_w_objects:
-            # Check for collisions with objects
             for obj in self.objects:
-                if self.rect.colliderect(obj.rect):                    # If collision occurred, revert to original position
-                    self.rect.topleft = original_pos
-                    self.meters_moved -= self.speed
-                    return
+                if temp_rect_x.colliderect(obj.rect):
+                    can_move_x = False
+                    break
 
-        self.check_if_in_boundaries()
+        # Check y-axis movement
+        can_move_y = True
+        if self.collision_w_objects:
+            for obj in self.objects:
+                if temp_rect_y.colliderect(obj.rect):
+                    can_move_y = False
+                    break
+
+        # Check boundaries for x movement
+        if not self.check_if_in_boundaries(new_x, self.rect.y):
+            can_move_x = False
+
+        # Check boundaries for y movement
+        if not self.check_if_in_boundaries(self.rect.x, new_y):
+            can_move_y = False
+
+        # Apply the allowed movements
+        if can_move_x:
+            self.rect.x = new_x
+            self.meters_moved += abs(move_x)
+
+        if can_move_y:
+            self.rect.y = new_y
+            self.meters_moved += abs(move_y)
 
     def add_rotate(self, degrees):
         self.rotation += degrees
@@ -266,16 +301,29 @@ class Character:
             print("player took damage, current health:", self.health)
             return False, damage
 
-    def check_if_in_boundaries(self):
-        if self.max_boundaries is not None:
-            if self.rect.center[0] < self.max_boundaries[0]:
-                self.rect.center = (self.max_boundaries[0], self.rect.center[1])
-            if self.rect.center[0] > self.max_boundaries[2]:
-                self.rect.center = (self.max_boundaries[2], self.rect.center[1])
-            if self.rect.center[1] < self.max_boundaries[1]:
-                self.rect.center = (self.rect.center[0], self.max_boundaries[1])
-            if self.rect.center[1] > self.max_boundaries[3]:
-                self.rect.center = (self.rect.center[0], self.max_boundaries[3])
+    def check_if_in_boundaries(self, x, y, margin=5):
+        if self.max_boundaries is None:
+            return True
+
+        # Create a temporary rect to check the new position
+        temp_rect = pygame.Rect(x, y, self.rect.width, self.rect.height)
+
+        # Add margin to the boundaries
+        boundaries_with_margin = (
+            self.max_boundaries[0] + margin,  # left
+            self.max_boundaries[1] + margin,  # top
+            self.max_boundaries[2] - margin - self.rect.width,  # right (account for rect width)
+            self.max_boundaries[3] - margin - self.rect.height  # bottom (account for rect height)
+        )
+
+        # Check if the position would be outside the boundaries
+        if (x < boundaries_with_margin[0] or
+                x > boundaries_with_margin[2] or
+                y < boundaries_with_margin[1] or
+                y > boundaries_with_margin[3]):
+            return False
+
+        return True
 
     def draw(self, screen):
         # Draw character body

@@ -27,10 +27,11 @@ def main():
     world_bounds = env.get_world_bounds()
 
     # Setup two players (characters) with starting positions.
+    # The players will be stuck if closer than 5 pixels to the border.
     players = [
         Character((world_bounds[2] - 100, world_bounds[3] - 100),
                   screen, boundaries=world_bounds, username="Ninja"),
-        Character((world_bounds[0], world_bounds[1]),
+        Character((world_bounds[0] + 10, world_bounds[1]+10),
                   screen, boundaries=world_bounds, username="Faze Jarvis")
     ]
 
