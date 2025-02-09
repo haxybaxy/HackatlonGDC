@@ -41,9 +41,7 @@ class Env:
 
         self.use_advanced_UI = use_game_ui
         if self.use_advanced_UI:
-
-        self.advanced_UI = game_UI(self.world_surface, self.world_width, self.world_height)
-
+            self.advanced_UI = game_UI(self.world_surface, self.world_width, self.world_height)
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
