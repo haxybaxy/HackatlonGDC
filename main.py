@@ -8,7 +8,7 @@ from components.character import Character
 if __name__ == "__main__":
     # game space is 1280x1280
 
-    environment = Env(n_of_obstacles=25)
+    environment = Env(display_width=800, display_height=800, n_of_obstacles=25)
     screen = environment.screen
 
     world_bounds = environment.get_world_bounds()
@@ -44,4 +44,5 @@ if __name__ == "__main__":
         if finished:
             break
         else:
-            environment.clock.tick(60)
+
+            environment.clock.tick(120) # 120 FPS

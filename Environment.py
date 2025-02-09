@@ -10,13 +10,23 @@ from components.bot import MyBot
 #screen = pygame.display.set_mode((100, 100))
 
 class Env:
-    def __init__(self, should_display=False, width=1280, height=1280, n_of_obstacles=10):
+    def __init__(self, should_display=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
         pygame.init()
-        screen = pygame.display.set_mode((width, height))
 
-        self.width = width
-        self.height = height
-        self.screen = screen
+        self.screen = pygame.display.set_mode((display_width, display_height))
+
+        # ONLY FOR DISPLAY
+        # Create display window with desired display dimensions
+        self.display_width = display_width
+        self.display_height = display_height
+        self.screen = pygame.display.set_mode((display_width, display_height))
+
+        # REAL WORLD DIMENSIONS
+        # Create an off-screen surface for the game world
+        self.world_width = world_width
+        self.world_height = world_height
+        self.world_surface = pygame.Surface((world_width, world_height))
+
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -43,7 +53,7 @@ class Env:
         self.reset()
 
     def get_world_bounds(self):
-        return (0, 0, self.width, self.height)
+        return (0, 0, self.world_width, self.world_height)
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
@@ -53,11 +63,11 @@ class Env:
 
         # TODO: add variables for parameters
         if randomize_objects:
-            self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
+            self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
         else:
             if self.OG_obstacles is None:
                 if self.OG_obstacles is None:
-                    self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size,
+                    self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size,
                                                       self.min_obstacle_size, self.n_of_obstacles)
 
             self.obstacles = self.OG_obstacles
@@ -83,7 +93,7 @@ class Env:
 
     def step(self, debugging=False):
         # fill the screen with a color to wipe away anything from last frame
-        self.screen.fill("purple")
+        self.world_surface.fill("purple")
 
         players_info = {}
         alive_players = []
@@ -91,7 +101,7 @@ class Env:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
-                player.draw(self.screen)
+                player.draw(self.world_surface)
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -110,31 +120,34 @@ class Env:
 
             players_info[player.username] = player.get_info()
 
-        # Check if game is over
-        if len(alive_players) == 1:
-            print("Game Over, winner is:", alive_players[0].username)
-            self.screen.fill("green")  # "Victory Screen" improve this
-            pygame.display.flip()
-            time.sleep(0.5) # remove this if not needed
-
-            #self.running = False
-            return True, players_info # Game is over
-
-        for obstacle in self.obstacles:
-            obstacle.draw(self.screen)
-
-        # flip() the display to put your work on screen
-        pygame.display.flip()
-
         new_dic = {
-            "general_info" : {
+            "general_info": {
                 "total_players": len(self.players),
                 "alive_players": len(alive_players)
             },
             "players_info": players_info
         }
 
-        return False, players_info
+        # Check if game is over
+        if len(alive_players) == 1:
+            print("Game Over, winner is:", alive_players[0].username)
+            self.world_surface.fill("green")  # "Victory Screen" improve this
+            pygame.display.flip()
+            time.sleep(0.5) # remove this if not needed
+
+            #self.running = False
+            return True, new_dic # Game is over
+
+        for obstacle in self.obstacles:
+            obstacle.draw(self.world_surface)
+
+        # flip() the display to put your work on screen
+        # Scale the off-screen world surface to the display window size
+        scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
+        self.screen.blit(scaled_surface, (0, 0))
+        pygame.display.flip()
+
+        return False, new_dic
 
     """TO MODIFY"""
     def calculate_reward(self, info_dictionary, bot_username):
