@@ -135,14 +135,14 @@ class Env:
         self.last_health = {}
         self.visited_areas = {}
 
+        """
         self.visited_areas.clear()
         self.last_positions.clear()
         self.last_health.clear()
         self.last_kills.clear()
-        self.last_damage.clear()
+        self.last_damage.clear()"""
 
         self.steps = 0
-
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -166,15 +166,13 @@ class Env:
             for index in range(len(self.players)):
                 self.players[index].related_bot = self.bots[index]
 
-        # Here we setup player lists for each player once we created all players
         for player in self.players:
             player.reset()
             temp = self.players.copy()
             temp.remove(player)
-            player.players = temp # Setting up players for each player
-            player.objects = self.obstacles # Setting up obstacles for each player
-            if hasattr(player, 'previous_positions'):
-                player.previous_positions = []
+            player.players = temp  # Other players
+            player.objects = self.obstacles
+
 
     def step(self, debugging=False):
         # Fill the world surface with a color to clear the previous frame.
@@ -195,10 +193,6 @@ class Env:
                 # Only draw if not in training mode.
                 if not self.training_mode:
                     player.draw(self.world_surface)
-                    if hasattr(player, 'previous_positions'):
-                        for pos in player.previous_positions[-10:]:
-                            pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos,
-                                               player.rect.width // 2)
 
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
@@ -250,8 +244,8 @@ class Env:
             #self.running = False
             return True, new_dic # Game is over
 
-        for obstacle in self.obstacles:
-            if not self.training_mode:
+        if not self.training_mode:
+            for obstacle in self.obstacles:
                 obstacle.draw(self.world_surface)
 
         if not self.training_mode:
