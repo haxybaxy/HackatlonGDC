@@ -66,6 +66,7 @@ Each step of the environment returns a dictionary containing game state informat
             "rotation": angle,         # Player's rotation angle in degrees
             "rays": [ray1, ray2, ...], # List of rays (each ray represents a detected obstacle or enemy)
             "current_ammo": int,       # Amount of ammunition left
+            "health": int,             # Player's health points
             "alive": bool,             # Whether the player is still alive
             "kills": int,              # Number of enemies the player has eliminated
             "damage_dealt": int,       # Total damage dealt to opponents

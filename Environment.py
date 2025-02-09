@@ -48,6 +48,11 @@ class Env:
 
         """REWARD VARIABLES"""
         self.last_positions = {}
+        self.last_damage = {}
+        self.last_kills = {}
+        self.last_health = {}
+        self.visited_areas = {}
+
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
@@ -64,6 +69,12 @@ class Env:
         self.screen.fill("green")
         pygame.display.flip()
         time.sleep(1)
+
+        self.last_positions = {}
+        self.last_damage = {}
+        self.last_kills = {}
+        self.last_health = {}
+        self.visited_areas = {}
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -177,6 +188,7 @@ class Env:
         damage_dealt = bot_info.get("damage_dealt", 0)
         meters_moved = bot_info.get("meters_moved", 0)
         total_rotation = bot_info.get("total_rotation", 0)
+        health = bot_info.get("health", 0)
 
         # Calculate reward:
         reward = 0
@@ -187,44 +199,92 @@ class Env:
     def calculate_reward(self, info_dictionary, bot_username):
         """
         Reward function for training bots.
-        Calculates movement since last frame and rewards attacking/killing.
+
+        Reward components (one-time per step):
+          1. Walking: if the bot moves, +1 (only if it moved this step).
+          2. Exploring: if the bot enters a new grid cell (e.g., 100x100), +5.
+          3. Damage: reward the difference in damage inflicted this frame.
+          4. Kill: reward massively for new kills (+20 per kill).
+          5. Missing: if a shot was fired and no damage was dealt, -1.
+          6. Getting hit: if health decreases compared to last step, negative penalty.
+          7. Staying near borders: if within 50 pixels of any border, -1.
         """
         players_info = info_dictionary.get("players_info", {})
         bot_info = players_info.get(bot_username)
-
         if bot_info is None:
             print(f"Bot {bot_username} not found in info dictionary.")
-            return 0  # No reward if bot isn't found.
+            return 0
 
-        # Extract necessary variables
+        # Extract current values
         current_position = bot_info.get("location", [0, 0])
         damage_dealt = bot_info.get("damage_dealt", 0)
         kills = bot_info.get("kills", 0)
         alive = bot_info.get("alive", False)
-        total_rotation = bot_info.get("total_rotation", 0)
+        health = bot_info.get("health", 100)
+        # Expect a flag indicating if a shot was fired this frame
+        shot_fired = bot_info.get("shot_fired", False)
 
-        # Compute movement since last step
-        last_position = self.last_positions.get(bot_username, current_position)
-        distance_moved = math.dist(current_position, last_position)  # Euclidean distance
+        # Initialize tracking dictionaries if necessary
+        if bot_username not in self.last_positions:
+            self.last_positions[bot_username] = current_position
+        if bot_username not in self.last_damage:
+            self.last_damage[bot_username] = damage_dealt
+        if bot_username not in self.last_kills:
+            self.last_kills[bot_username] = kills
+        if bot_username not in self.last_health:
+            self.last_health[bot_username] = health
+        if bot_username not in self.visited_areas:
+            self.visited_areas[bot_username] = set()
 
-        # Update stored position
-        self.last_positions[bot_username] = current_position
-
-        # Reward calculation
         reward = 0
 
-        # Encourage movement
-        reward += distance_moved * 0.1  # Reward per unit moved
+        # 1. Walking reward (one-time): if moved at all, +1
+        distance_moved = math.dist(current_position, self.last_positions[bot_username])
+        if distance_moved > 0:
+            reward += 1
 
-        # Reward attacking enemies
-        reward += damage_dealt * 1  # 1 point per damage dealt
+        # 2. Exploration reward (one-time): if entering a new grid cell, +5
+        grid_size = 100  # You can adjust the grid size as needed.
+        cell = (int(current_position[0] // grid_size), int(current_position[1] // grid_size))
+        if cell not in self.visited_areas[bot_username]:
+            reward += 5
+            self.visited_areas[bot_username].add(cell)
 
-        # Reward kills
-        reward += kills * 10  # Big reward for killing an enemy
+        # 3. Damage reward: reward the damage inflicted this frame.
+        delta_damage = damage_dealt - self.last_damage[bot_username]
+        if delta_damage > 0:
+            reward += delta_damage  # 1 point per damage unit
 
-        # Penalize dying
-        if not alive:
-            reward -= 5  # Death penalty
+        # 4. Kill reward: massive reward for new kills.
+        delta_kills = kills - self.last_kills[bot_username]
+        if delta_kills > 0:
+            reward += delta_kills * 20  # 20 points per kill
+
+        # 5. Negative reward for missing: if a shot was fired and no damage occurred.
+        if shot_fired and delta_damage <= 0:
+            reward -= 1
+
+        # 6. Negative reward if hit by enemy: if health decreased.
+        delta_health = self.last_health[bot_username] - health
+        if delta_health > 0:
+            reward -= delta_health * 0.2  # adjust penalty factor as needed
+
+        # 7. Negative reward for staying near the borders.
+        border_threshold = 50
+        near_border = (
+                current_position[0] < border_threshold or
+                current_position[0] > self.world_width - border_threshold or
+                current_position[1] < border_threshold or
+                current_position[1] > self.world_height - border_threshold
+        )
+        if near_border:
+            reward -= 1
+
+        # Update tracking values for next step.
+        self.last_positions[bot_username] = current_position
+        self.last_damage[bot_username] = damage_dealt
+        self.last_kills[bot_username] = kills
+        self.last_health[bot_username] = health
 
         return reward
 
