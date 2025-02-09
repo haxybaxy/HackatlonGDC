@@ -200,7 +200,8 @@ class Character:
                         else:
                             self.damage_dealt += res[1]
                     else:
-                        print("Saw player")
+                        #print("Saw player")
+                        None
 
                     # Calculate distance to current intersection
                     current_distance = distance_between_points(self.get_center(), point)

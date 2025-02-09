@@ -71,6 +71,8 @@ class Env:
         self.last_health = {}
         self.visited_areas = {}
 
+        self.steps = 0
+
 
     def create_background(self):
         background = pygame.Surface((self.world_width, self.world_height))
@@ -138,6 +140,8 @@ class Env:
         self.last_health = {}
         self.visited_areas = {}
 
+        self.steps = 0
+
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -175,6 +179,8 @@ class Env:
         # Fill the world surface with a color to clear the previous frame.
         if not self.training_mode:
             self.world_surface.blit(self.background, (0,0))
+
+        self.steps += 1
 
         players_info = {}
         alive_players = []
@@ -301,11 +307,13 @@ class Env:
         Reward components (one-time per step):
           1. Walking: if the bot moves, +1 (only if it moved this step).
           2. Exploring: if the bot enters a new grid cell (e.g., 100x100), +5.
-          3. Damage: reward the difference in damage inflicted this frame.
+          3. Damage: reward the damage inflicted this frame.
           4. Kill: reward massively for new kills (+20 per kill).
-          5. Missing: if a shot was fired and no damage was dealt, -1.
-          6. Getting hit: if health decreases compared to last step, negative penalty.
-          7. Staying near borders: if within 50 pixels of any border, -1.
+          5. Negative reward for missing: if a shot was fired and no damage was dealt, -1.
+          6. Negative reward if hit by enemy: if health decreases compared to last step, negative penalty.
+          7. Negative reward for staying near the borders: if within 50 pixels of any border, -1.
+
+        Additionally, all rewards are scaled by a time-based multiplier that decays over the episode.
         """
         players_info = info_dictionary.get("players_info", {})
         bot_info = players_info.get(bot_username)
@@ -342,7 +350,7 @@ class Env:
             reward += 1
 
         # 2. Exploration reward (one-time): if entering a new grid cell, +5
-        grid_size = 100  # You can adjust the grid size as needed.
+        grid_size = 100  # Adjust as needed.
         cell = (int(current_position[0] // grid_size), int(current_position[1] // grid_size))
         if cell not in self.visited_areas[bot_username]:
             reward += 5
@@ -365,7 +373,7 @@ class Env:
         # 6. Negative reward if hit by enemy: if health decreased.
         delta_health = self.last_health[bot_username] - health
         if delta_health > 0:
-            reward -= delta_health * 0.2  # adjust penalty factor as needed
+            reward -= delta_health * 0.2  # Adjust penalty factor as needed
 
         # 7. Negative reward for staying near the borders.
         border_threshold = 50
@@ -383,6 +391,11 @@ class Env:
         self.last_damage[bot_username] = damage_dealt
         self.last_kills[bot_username] = kills
         self.last_health[bot_username] = health
+
+        # --- NEW: Time-based decay multiplier ---
+        decay_rate = 0.001  # Determines how fast the multiplier decays per step.
+        time_multiplier = max(0.2, 1 - decay_rate * self.steps)
+        reward *= time_multiplier
 
         return reward
 
