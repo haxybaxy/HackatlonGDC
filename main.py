@@ -16,7 +16,7 @@ def main():
     n_of_obstacles = 25
 
     # Create the environment.
-    env = Env(training=False,
+    env = Env(training=True,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,
@@ -45,6 +45,11 @@ def main():
 
     bots = [MyBot(state_size=state_size), MyBot(state_size=state_size)]
 
+    for idx, bot in enumerate(bots):
+        save_path = f"bot_model_{idx}.pth"
+        bot.load(save_path)
+        print(f"Load model for player {players[idx].username} from {save_path}")
+
     # Link players, bots, and obstacles into the environment.
     env.set_players_bots_objects(players, bots)
 
@@ -54,7 +59,6 @@ def main():
 
     for epoch in range(num_epochs):
         print(f"Starting epoch {epoch + 1}")
-        # Reset the environment (randomizing obstacles for variety).
         env.reset(randomize_objects=True)
         start_time = time.time()
 
@@ -79,15 +83,12 @@ def main():
                 # Train the bot from experience.
                 bot.replay()
 
-                print(f"Reward for {player.username}: {reward}")
+                #print(f"Reward for {player.username}: {reward}")
 
             # If the game/episode is over, break out of the loop.
             if finished:
-                print("Episode finished.")
+                print("Episode finished, took {:.3f} seconds.".format(time.time() - start_time))
                 break
-
-            # Maintain desired FPS.
-            env.clock.tick(120)
 
         # Optionally, save the model weights after each epoch.
         for idx, bot in enumerate(bots):

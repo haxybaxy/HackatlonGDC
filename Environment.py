@@ -1,6 +1,9 @@
 import math
+import os
 import random
 import time
+
+import numpy as np
 import pygame
 from components.character import Character
 from components.world_gen import spawn_objects
@@ -36,6 +39,9 @@ class Env:
         if not self.training_mode:
             self.screen = pygame.display.set_mode((display_width, display_height))
         else:
+            os.environ['SDL_VIDEODRIVER'] = 'dummy'  # Disable actual video output
+            pygame.display.set_mode((1, 1))  # Minimal display
+
             self.screen = pygame.Surface((display_width, display_height))
 
         # REAL WORLD DIMENSIONS
@@ -71,6 +77,14 @@ class Env:
         self.last_health = {}
         self.visited_areas = {}
 
+        self.visited_areas.clear()
+        self.last_positions.clear()
+        self.last_health.clear()
+        self.last_kills.clear()
+        self.last_damage.clear()
+
+        self.steps = 0
+
 
     def create_background(self):
         background = pygame.Surface((self.world_width, self.world_height))
@@ -94,23 +108,6 @@ class Env:
 
         background.blit(grid_surface, (0, 0))
         return background
-
-    def draw_obstacle(self, obstacle):
-        #Shadow
-        shadow_offset = 5
-        shadow_rect = obstacle.rect.copy()
-        shadow_rect.x += shadow_offset
-        shadow_rect.y += shadow_offset
-        pygame.draw.rect(self.screen, (0,0,0,50), shadow_rect, border_radius=8)
-
-        #Main obstacle
-        pygame.draw.rect(self.screen, self.theme.colors['obstacle'], obstacle.rect, border_radius=8)
-
-        #Highlight
-        highlight = pygame.Surface((obstacle.rect.width, obstacle.rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(highlight, (255, 255, 255, 30), highlight.get_rect(), border_radius=8)
-        self.screen.blit(highlight, obstacle.rect)
-
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
@@ -137,6 +134,14 @@ class Env:
         self.last_kills = {}
         self.last_health = {}
         self.visited_areas = {}
+
+        self.visited_areas.clear()
+        self.last_positions.clear()
+        self.last_health.clear()
+        self.last_kills.clear()
+        self.last_damage.clear()
+
+        self.steps = 0
 
 
         # TODO: add variables for parameters
@@ -176,26 +181,25 @@ class Env:
         if not self.training_mode:
             self.world_surface.blit(self.background, (0,0))
 
+        self.steps += 1
+
         players_info = {}
         alive_players = []
 
-        #Player trials
         for player in self.players:
             if player.alive:
-                if hasattr(player, 'previous_positions'):
-                    for pos in player.previous_positions[-10:]:
-                        pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos, player.rect.width // 2)
 
-
-        for player in self.players:
-            if player.alive:
                 alive_players.append(player)
                 player.reload()
 
                 # Only draw if not in training mode.
                 if not self.training_mode:
                     player.draw(self.world_surface)
-        
+                    if hasattr(player, 'previous_positions'):
+                        for pos in player.previous_positions[-10:]:
+                            pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos,
+                                               player.rect.width // 2)
+
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -212,12 +216,13 @@ class Env:
                 if actions["shoot"]:
                     player.shoot()
 
-                #Store position for trial
-                if not hasattr(player, 'previous_positions'):
-                    player.previous_positions = []
-                player.previous_positions.append(player.rect.center)
-                if len(player.previous_positions) > 10:
-                    player.previous_positions.pop(0)
+                if not self.training_mode:
+                    #Store position for trial
+                    if not hasattr(player, 'previous_positions'):
+                        player.previous_positions = []
+                    player.previous_positions.append(player.rect.center)
+                    if len(player.previous_positions) > 10:
+                        player.previous_positions.pop(0)
 
             players_info[player.username] = player.get_info()
 
@@ -301,11 +306,13 @@ class Env:
         Reward components (one-time per step):
           1. Walking: if the bot moves, +1 (only if it moved this step).
           2. Exploring: if the bot enters a new grid cell (e.g., 100x100), +5.
-          3. Damage: reward the difference in damage inflicted this frame.
+          3. Damage: reward the damage inflicted this frame.
           4. Kill: reward massively for new kills (+20 per kill).
-          5. Missing: if a shot was fired and no damage was dealt, -1.
-          6. Getting hit: if health decreases compared to last step, negative penalty.
-          7. Staying near borders: if within 50 pixels of any border, -1.
+          5. Negative reward for missing: if a shot was fired and no damage was dealt, -1.
+          6. Negative reward if hit by enemy: if health decreases compared to last step, negative penalty.
+          7. Negative reward for staying near the borders: if within 50 pixels of any border, -1.
+
+        Additionally, all rewards are scaled by a time-based multiplier that decays over the episode.
         """
         players_info = info_dictionary.get("players_info", {})
         bot_info = players_info.get(bot_username)
@@ -342,7 +349,7 @@ class Env:
             reward += 1
 
         # 2. Exploration reward (one-time): if entering a new grid cell, +5
-        grid_size = 100  # You can adjust the grid size as needed.
+        grid_size = 100  # Adjust as needed.
         cell = (int(current_position[0] // grid_size), int(current_position[1] // grid_size))
         if cell not in self.visited_areas[bot_username]:
             reward += 5
@@ -365,7 +372,7 @@ class Env:
         # 6. Negative reward if hit by enemy: if health decreased.
         delta_health = self.last_health[bot_username] - health
         if delta_health > 0:
-            reward -= delta_health * 0.2  # adjust penalty factor as needed
+            reward -= delta_health * 0.2  # Adjust penalty factor as needed
 
         # 7. Negative reward for staying near the borders.
         border_threshold = 50
@@ -383,6 +390,11 @@ class Env:
         self.last_damage[bot_username] = damage_dealt
         self.last_kills[bot_username] = kills
         self.last_health[bot_username] = health
+
+        # --- NEW: Time-based decay multiplier ---
+        decay_rate = 0.001  # Determines how fast the multiplier decays per step.
+        time_multiplier = max(0.2, 1 - decay_rate * self.steps)
+        reward *= time_multiplier
 
         return reward
 
