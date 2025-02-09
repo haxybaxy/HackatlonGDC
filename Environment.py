@@ -1,32 +1,19 @@
 import math
 import os
-import random
 import time
 
-import numpy as np
 import pygame
-from components.character import Character
+
+from advanced_UI import game_UI
 from components.world_gen import spawn_objects
-from components.my_bot import MyBot
+
+
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
 
-class GameTheme:
-    def __init__(self):
-        self.colors = {
-            'background': (34, 39, 46), #DArk Blue
-            'grass': [(34, 139, 34), (46, 154, 46)], #Two shades of Green
-            'obstacle': (75, 83, 88), #Grey
-            'grid': (50, 50, 50, 30), #Semi-transparent Grid
-            'player_trail': (255, 255, 255, 30), #Semi-transparent White
-        }
-        self.grid_size = 50
-        self.grid_line_width = 1
-
-
 class Env:
-    def __init__(self, training=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
+    def __init__(self, training=False, use_game_ui=True, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
         pygame.init()
 
         self.training_mode = training
@@ -52,9 +39,9 @@ class Env:
 
         self.clock = pygame.time.Clock()
         self.running = True
-        self.theme = GameTheme()
-
-        self.background = self.create_background() #Create background surface once (below)
+        self.use_advanced_UI = use_game_ui
+        if self.use_advanced_UI:
+            self.advanced_UI = game_UI(self.screen, self.world_width, self.world_height)
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
@@ -86,29 +73,6 @@ class Env:
         self.steps = 0
 
 
-    def create_background(self):
-        background = pygame.Surface((self.world_width, self.world_height))
-        background.fill(self.theme.colors['background'])
-
-        #Grass pattern
-        for x in range(0, self.world_width, 10):
-            for y in range(0, self.world_height, 10):
-                if random.random() < 0.3: #30% chance for grass detail
-                    size = random.randint(2,4)
-                    color = random.choice(self.theme.colors['grass'])
-                    pygame.draw.circle(background, color, (x,y), size)
-
-        #Grid
-        grid_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
-        for x in range(0, self.world_width, self.theme.grid_size):
-            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.world_height), self.theme.grid_line_width)
-        for y in range(0, self.world_height, self.theme.grid_size):
-            pygame.draw.line(grid_surface, self.theme.colors['grid'],
-                             (0, y), (self.world_width, y), self.theme.grid_line_width)
-
-        background.blit(grid_surface, (0, 0))
-        return background
-
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
         self.OG_bots = bots
@@ -122,9 +86,13 @@ class Env:
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
         if not self.training_mode:
-            self.screen.blit(self.background, (0, 0))
-            pygame.display.flip()
-            time.sleep(1)
+            if not self.use_advanced_UI:
+                self.screen.fill("green")
+                pygame.display.flip()
+                time.sleep(1)
+            else:
+                self.advanced_UI.display_background(1)
+
         else:
             # In training mode, you might simply clear the screen without delay.
             self.screen.fill("green")
@@ -177,7 +145,10 @@ class Env:
     def step(self, debugging=False):
         # Fill the world surface with a color to clear the previous frame.
         if not self.training_mode:
-            self.world_surface.blit(self.background, (0,0))
+            if not self.use_advanced_UI:
+                self.world_surface.fill("green")
+            else:
+                self.advanced_UI.display_background(0)
 
         self.steps += 1
 
@@ -231,20 +202,18 @@ class Env:
         if len(alive_players) == 1:
             print("Game Over, winner is:", alive_players[0].username)
             if not self.training_mode:
-                winner_screen = self.background.copy()
-                font = pygame.font.Font(None, 74)
-                text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.world_width/2, self.world_height/2))
-                winner_screen.blit(text, text_rect)
-                self.world_surface.blit(winner_screen, (0, 0))
-
-                pygame.display.flip()
-                time.sleep(0.5) # remove this if not needed - I sure need it
+                if self.use_advanced_UI:
+                    self.advanced_UI.display_winner_screen(alive_players)
+                else:
+                    self.screen.fill("green")
 
             #self.running = False
             return True, new_dic # Game is over
 
-        if not self.training_mode:
+        else:
+            self.advanced_UI.analyze_dictionary(new_dic)
+
+        if not self.training_mode and not self.use_advanced_UI:
             for obstacle in self.obstacles:
                 obstacle.draw(self.world_surface)
 
