@@ -1,5 +1,5 @@
 import random
-from Obstacle import Obstacle
+from components.obstacle import Obstacle
 import math
 
 def spawn_objects(world_boundaries, max_object_size, min_object_size, num_objects, corner_radius=100):

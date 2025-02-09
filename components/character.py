@@ -1,6 +1,6 @@
 import time
 import pygame
-from utils import find_hit_point_on_rectangle, distance_between_points
+from components.utils import find_hit_point_on_rectangle, distance_between_points
 
 class Character:
     def __init__(self, starting_pos, screen, speed=5, boundaries=None, objects=None, username=None):
@@ -50,6 +50,7 @@ class Character:
             "rays": self.get_rays(),
             "current_ammo": self.current_ammo,
             "alive": self.alive,
+            "health": self.health,
             "kills": self.total_kills,
             "damage_dealt": self.damage_dealt,
             "meters_moved": self.meters_moved,

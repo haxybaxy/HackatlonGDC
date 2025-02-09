@@ -1,13 +1,11 @@
-import random
 import time
 import pygame
-from Character import Character
-from world_gen import spawn_objects
-from bot import MyBot
+from components.character import Character
+from components.world_gen import spawn_objects
+from components.clean_bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
-screen = pygame.display.set_mode((500, 500))
 
 class GameTheme:
     def __init__(self):
@@ -21,12 +19,25 @@ class GameTheme:
         self.grid_size = 50
         self.grid_line_width = 1
 
+
 class Env:
-    def __init__(self, should_display=False, width=1280, height=700, n_of_obstacles=10):
+    def __init__(self, should_display=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
         pygame.init()
-        self.width = width
-        self.height = height
-        self.screen = pygame.display.set_mode((width, height))
+
+        self.screen = pygame.display.set_mode((display_width, display_height))
+
+        # ONLY FOR DISPLAY
+        # Create display window with desired display dimensions
+        self.display_width = display_width
+        self.display_height = display_height
+        self.screen = pygame.display.set_mode((display_width, display_height))
+
+        # REAL WORLD DIMENSIONS
+        # Create an off-screen surface for the game world
+        self.world_width = world_width
+        self.world_height = world_height
+        self.world_surface = pygame.Surface((world_width, world_height))
+
         self.clock = pygame.time.Clock()
         self.running = True
         self.theme = GameTheme()
@@ -95,7 +106,7 @@ class Env:
         self.reset()
 
     def get_world_bounds(self):
-        return (0, 0, self.width, self.height)
+        return (0, 0, self.world_width, self.world_height)
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
@@ -105,11 +116,11 @@ class Env:
 
         # TODO: add variables for parameters
         if randomize_objects:
-            self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
+            self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
         else:
             if self.OG_obstacles is None:
                 if self.OG_obstacles is None:
-                    self.OG_obstacles = spawn_objects((0, 0, self.width, self.height), self.max_obstacle_size,
+                    self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size,
                                                       self.min_obstacle_size, self.n_of_obstacles)
 
             self.obstacles = self.OG_obstacles
@@ -136,8 +147,8 @@ class Env:
                 player.previous_positions = []
 
     def step(self, debugging=False):
-        #Background
-        self.screen.blit(self.background, (0,0))
+        # fill the screen with a color to wipe away anything from last frame
+        self.world_surface.blit(self.background, (0,0))
 
         players_info = {}
         alive_players = []
@@ -154,7 +165,9 @@ class Env:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
-                player.draw(self.screen)
+
+                player.draw(self.world_surface)
+                
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -180,74 +193,73 @@ class Env:
 
             players_info[player.username] = player.get_info()
 
-        # Check if game is over
-        if len(alive_players) == 1:
-            print("Game Over, winner is:", alive_players[0].username)
-            winner_screen = self.background.copy()
-            font = pygame.font.Font(None, 74)
-            text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.width/2, self.height/2))
-            winner_screen.blit(text, text_rect)
-            self.screen.blit(winner_screen, (0, 0))
-            pygame.display.flip()
-            time.sleep(0.5) # remove this if not needed - I sure need it
-
-            #self.running = False
-            return True, players_info # Game is over
-
-        for obstacle in self.obstacles:
-            self.draw_obstacle(obstacle)
-
-        # flip() the display to put your work on screen
-        pygame.display.flip()
-
         new_dic = {
-            "general_info" : {
+            "general_info": {
                 "total_players": len(self.players),
                 "alive_players": len(alive_players)
             },
             "players_info": players_info
         }
 
-        return False, players_info
+        # Check if game is over
+        if len(alive_players) == 1:
+            print("Game Over, winner is:", alive_players[0].username)
+
+            winner_screen = self.background.copy()
+            font = pygame.font.Font(None, 74)
+            text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(self.width/2, self.height/2))
+            winner_screen.blit(text, text_rect)
+            self.world_surface.blit(winner_screen, (0, 0))
+            
+            pygame.display.flip()
+            time.sleep(0.5) # remove this if not needed - I sure need it
+
+            #self.running = False
+            return True, new_dic # Game is over
+
+        for obstacle in self.obstacles:
+
+            obstacle.draw(self.world_surface)
+
+        # flip() the display to put your work on screen
+        # Scale the off-screen world surface to the display window size
+        scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
+        self.screen.blit(scaled_surface, (0, 0))
+        pygame.display.flip()
+
+        return False, new_dic
+
+    """TO MODIFY"""
+    def calculate_reward(self, info_dictionary, bot_username):
+        """THIS FUNCTION IS USED TO CALCULATE THE REWARD FOR A BOT"""
+        """NEEDS TO BE WRITTEN BY YOU TO FINE TUNE YOURS"""
+
+        # retrieve the players' information from the dictionary
+        players_info = info_dictionary.get("players_info", {})
+        bot_info = players_info.get(bot_username)
+
+        # if the bot is not found, return a default reward of 0
+        if bot_info is None:
+            print("Bot not found in the dictionary")
+            return 0
+
+        # Extract variables from the bot's info
+        location = bot_info.get("location", [0, 0])
+        rotation = bot_info.get("rotation", 0)
+        rays = bot_info.get("rays", [])
+        current_ammo = bot_info.get("current_ammo", 0)
+        alive = bot_info.get("alive", False)
+        kills = bot_info.get("kills", 0)
+        damage_dealt = bot_info.get("damage_dealt", 0)
+        meters_moved = bot_info.get("meters_moved", 0)
+        total_rotation = bot_info.get("total_rotation", 0)
+        health = bot_info.get("health", 0)
+
+        # Calculate reward:
+        reward = 0
+        # Add your reward calculation here
+
+        return reward
 
 
-if __name__ == "__main__":
-    # game space is 1280x720
-
-    environment = Env(n_of_obstacles=25)
-    screen = environment.screen
-
-    world_bounds = environment.get_world_bounds()
-
-
-    """SETTING UP CHARACTERS >>> UPDATE THIS"""
-    players = [
-
-    Character((world_bounds[2]-100, world_bounds[3]-100), screen, boundaries=world_bounds, username="Ninja"),
-
-    Character((world_bounds[0], world_bounds[1]), screen, boundaries=world_bounds, username="Faze Jarvis")
-
-    ]
-
-    """ENSURE THERE ARE AS MANY BOTS AS PLAYERS"""
-    bots = [
-
-        MyBot(),
-        MyBot()
-
-    ]
-
-    environment.set_players_bots_objects(players, bots) # Environment should be ready
-    st = time.time()
-    while True:
-        if st + 15 < time.time():
-            environment.reset()
-            st = time.time()
-
-        finished, info = environment.step()
-        print(info)
-        if finished:
-            break
-        else:
-            environment.clock.tick(60)
