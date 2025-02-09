@@ -26,6 +26,7 @@ class Character:
         self.alive = True
         self.is_reloading = False
         self.rays = []
+        self.previous_positions = []
 
         # Useful to train
         self.total_kills = 0

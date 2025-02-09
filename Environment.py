@@ -2,6 +2,8 @@ import math
 import os
 import random
 import time
+
+import numpy as np
 import pygame
 from components.character import Character
 from components.world_gen import spawn_objects
@@ -75,6 +77,12 @@ class Env:
         self.last_health = {}
         self.visited_areas = {}
 
+        self.visited_areas.clear()
+        self.last_positions.clear()
+        self.last_health.clear()
+        self.last_kills.clear()
+        self.last_damage.clear()
+
         self.steps = 0
 
 
@@ -100,23 +108,6 @@ class Env:
 
         background.blit(grid_surface, (0, 0))
         return background
-
-    def draw_obstacle(self, obstacle):
-        #Shadow
-        shadow_offset = 5
-        shadow_rect = obstacle.rect.copy()
-        shadow_rect.x += shadow_offset
-        shadow_rect.y += shadow_offset
-        pygame.draw.rect(self.screen, (0,0,0,50), shadow_rect, border_radius=8)
-
-        #Main obstacle
-        pygame.draw.rect(self.screen, self.theme.colors['obstacle'], obstacle.rect, border_radius=8)
-
-        #Highlight
-        highlight = pygame.Surface((obstacle.rect.width, obstacle.rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(highlight, (255, 255, 255, 30), highlight.get_rect(), border_radius=8)
-        self.screen.blit(highlight, obstacle.rect)
-
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
@@ -195,23 +186,20 @@ class Env:
         players_info = {}
         alive_players = []
 
-        #Player trials
         for player in self.players:
             if player.alive:
-                if hasattr(player, 'previous_positions'):
-                    for pos in player.previous_positions[-10:]:
-                        pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos, player.rect.width // 2)
 
-
-        for player in self.players:
-            if player.alive:
                 alive_players.append(player)
                 player.reload()
 
                 # Only draw if not in training mode.
                 if not self.training_mode:
                     player.draw(self.world_surface)
-        
+                    if hasattr(player, 'previous_positions'):
+                        for pos in player.previous_positions[-10:]:
+                            pygame.draw.circle(self.screen, self.theme.colors['player_trail'], pos,
+                                               player.rect.width // 2)
+
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -228,12 +216,13 @@ class Env:
                 if actions["shoot"]:
                     player.shoot()
 
-                #Store position for trial
-                if not hasattr(player, 'previous_positions'):
-                    player.previous_positions = []
-                player.previous_positions.append(player.rect.center)
-                if len(player.previous_positions) > 10:
-                    player.previous_positions.pop(0)
+                if not self.training_mode:
+                    #Store position for trial
+                    if not hasattr(player, 'previous_positions'):
+                        player.previous_positions = []
+                    player.previous_positions.append(player.rect.center)
+                    if len(player.previous_positions) > 10:
+                        player.previous_positions.pop(0)
 
             players_info[player.username] = player.get_info()
 
