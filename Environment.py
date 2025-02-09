@@ -1,20 +1,22 @@
-import random
 import time
 import pygame
-from Character import Character
-from world_gen import spawn_objects
-from bot import MyBot
+from components.character import Character
+from components.world_gen import spawn_objects
+from components.bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
-screen = pygame.display.set_mode((100, 100))
+# TODO: Check if this is needed to be run
+#screen = pygame.display.set_mode((100, 100))
 
 class Env:
     def __init__(self, should_display=False, width=1280, height=1280, n_of_obstacles=10):
         pygame.init()
+        screen = pygame.display.set_mode((width, height))
+
         self.width = width
         self.height = height
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = screen
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -89,7 +91,7 @@ class Env:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
-                player.draw(screen)
+                player.draw(self.screen)
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -119,7 +121,7 @@ class Env:
             return True, players_info # Game is over
 
         for obstacle in self.obstacles:
-            obstacle.draw(screen)
+            obstacle.draw(self.screen)
 
         # flip() the display to put your work on screen
         pygame.display.flip()
@@ -134,43 +136,35 @@ class Env:
 
         return False, players_info
 
+    """TO MODIFY"""
+    def calculate_reward(self, info_dictionary, bot_username):
+        """THIS FUNCTION IS USED TO CALCULATE THE REWARD FOR A BOT"""
+        """NEEDS TO BE WRITTEN BY YOU TO FINE TUNE YOURS"""
 
-if __name__ == "__main__":
-    # game space is 1280x720
+        # retrieve the players' information from the dictionary
+        players_info = info_dictionary.get("players_info", {})
+        bot_info = players_info.get(bot_username)
 
-    environment = Env(n_of_obstacles=25)
-    screen = environment.screen
+        # if the bot is not found, return a default reward of 0
+        if bot_info is None:
+            print("Bot not found in the dictionary")
+            return 0
 
-    world_bounds = environment.get_world_bounds()
+        # Extract variables from the bot's info
+        location = bot_info.get("location", [0, 0])
+        rotation = bot_info.get("rotation", 0)
+        rays = bot_info.get("rays", [])
+        current_ammo = bot_info.get("current_ammo", 0)
+        alive = bot_info.get("alive", False)
+        kills = bot_info.get("kills", 0)
+        damage_dealt = bot_info.get("damage_dealt", 0)
+        meters_moved = bot_info.get("meters_moved", 0)
+        total_rotation = bot_info.get("total_rotation", 0)
+
+        # Calculate reward:
+        reward = 0
+        # Add your reward calculation here
+
+        return reward
 
 
-    """SETTING UP CHARACTERS >>> UPDATE THIS"""
-    players = [
-
-    Character((world_bounds[2]-100, world_bounds[3]-100), screen, boundaries=world_bounds, username="Ninja"),
-
-    Character((world_bounds[0], world_bounds[1]), screen, boundaries=world_bounds, username="Faze Jarvis")
-
-    ]
-
-    """ENSURE THERE ARE AS MANY BOTS AS PLAYERS"""
-    bots = [
-
-        MyBot(),
-        MyBot()
-
-    ]
-
-    environment.set_players_bots_objects(players, bots) # Environment should be ready
-    st = time.time()
-    while True:
-        if st + 15 < time.time():
-            environment.reset()
-            st = time.time()
-
-        finished, info = environment.step()
-        print(info)
-        if finished:
-            break
-        else:
-            environment.clock.tick(60)
