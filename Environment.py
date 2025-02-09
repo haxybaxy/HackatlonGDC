@@ -2,7 +2,7 @@ import time
 import pygame
 from components.character import Character
 from components.world_gen import spawn_objects
-from components.bot import MyBot
+from components.clean_bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 

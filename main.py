@@ -1,7 +1,7 @@
 import time
 
 from Environment import Env
-from components.bot import MyBot
+from components.clean_bot import MyBot
 from components.character import Character
 
 
@@ -33,16 +33,24 @@ if __name__ == "__main__":
 
     environment.set_players_bots_objects(players, bots) # Environment should be ready
 
+    time_limit = 120 # Time limit to force a match to end
+    epochs = 100
+
     # THIS WILL PERFORM A SINGLE GAME
-    while True:
-        finished, info = environment.step()
-        for player in players:
-            reward = environment.calculate_reward(info, player.username)
-            print("Reward for", player.username, "is:", reward)
+    for epochs in range(epochs):
+        start_time = time.time()
+        while True:
+            if start_time + time_limit < time.time():
+                print("Game Over, time limit reached")
+                break
 
-        print(info)
-        if finished:
-            break
-        else:
+            finished, info = environment.step()
+            for player in players:
+                reward = environment.calculate_reward(info, player.username)
+                print("Reward for", player.username, "is:", reward)
 
-            environment.clock.tick(120) # 120 FPS
+            print(info)
+            if finished:
+                break
+            else:
+                environment.clock.tick(120) # 120 FPS
