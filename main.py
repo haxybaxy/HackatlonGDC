@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     ]
 
-    """ENSURE THERE ARE AS MANY BOTS AS PLAYERS"""
+    """ENSURE THERE ARE AS MANY BOTS AS PLAYERS >>> UPDATE THIS"""
     bots = [
 
         MyBot(),
@@ -32,12 +32,9 @@ if __name__ == "__main__":
     ]
 
     environment.set_players_bots_objects(players, bots) # Environment should be ready
-    st = time.time()
-    while True:
-        if st + 15 < time.time():
-            environment.reset()
-            st = time.time()
 
+    # THIS WILL PERFORM A SINGLE GAME
+    while True:
         finished, info = environment.step()
         for player in players:
             reward = environment.calculate_reward(info, player.username)
