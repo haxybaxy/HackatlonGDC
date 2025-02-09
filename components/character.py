@@ -210,6 +210,25 @@ class Character:
                         hit_type = "player"
                         hit_distance = current_distance
 
+            # NEW: Check collision with world bounds.
+            if self.max_boundaries is not None:
+                # Create a rectangle representing the world boundaries.
+                world_rect = pygame.Rect(
+                    self.max_boundaries[0],
+                    self.max_boundaries[1],
+                    self.max_boundaries[2] - self.max_boundaries[0],
+                    self.max_boundaries[3] - self.max_boundaries[1]
+                )
+                boundary_point = find_hit_point_on_rectangle(self.get_center(), end_position, world_rect)
+                if boundary_point is not None:
+                    current_distance = distance_between_points(self.get_center(), boundary_point)
+                    closest_distance = distance_between_points(self.get_center(), closest_end_position)
+                    if current_distance < closest_distance:
+                        closest_end_position = (boundary_point[0], boundary_point[1])
+                        # We treat the boundary as an object (or obstacle).
+                        hit_type = "object"
+                        hit_distance = current_distance
+
             # Add the ray with its closest intersection point (or original endpoint if no intersection)
             rays.append([(self.get_center(), closest_end_position), hit_distance, hit_type])
 
