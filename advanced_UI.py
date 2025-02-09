@@ -82,7 +82,9 @@ class game_UI:
 
         for bot_info in players_info:
 
-            #bot_info = players_info.get(bot_username)
+            print(bot_info)
+
+            bot_info = players_info.get(bot_info)
 
             # if the bot is not found, return a default reward of 0
             if bot_info is None:
