@@ -11,16 +11,20 @@ from components.my_bot import MyBot
 #screen = pygame.display.set_mode((100, 100))
 
 class Env:
-    def __init__(self, should_display=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
+    def __init__(self, training=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
         pygame.init()
 
-        self.screen = pygame.display.set_mode((display_width, display_height))
+        self.training_mode = training
 
         # ONLY FOR DISPLAY
         # Create display window with desired display dimensions
         self.display_width = display_width
         self.display_height = display_height
-        self.screen = pygame.display.set_mode((display_width, display_height))
+        # Only create a window if not in training mode
+        if not self.training_mode:
+            self.screen = pygame.display.set_mode((display_width, display_height))
+        else:
+            self.screen = pygame.Surface((display_width, display_height))
 
         # REAL WORLD DIMENSIONS
         # Create an off-screen surface for the game world
@@ -30,8 +34,6 @@ class Env:
 
         self.clock = pygame.time.Clock()
         self.running = True
-
-        self.display = should_display # If you want to display the game or not
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
@@ -66,9 +68,13 @@ class Env:
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
-        self.screen.fill("green")
-        pygame.display.flip()
-        time.sleep(1)
+        if not self.training_mode:
+            self.screen.fill("green")
+            pygame.display.flip()
+            time.sleep(1)
+        else:
+            # In training mode, you might simply clear the screen without delay.
+            self.screen.fill("green")
 
         self.last_positions = {}
         self.last_damage = {}
@@ -107,8 +113,9 @@ class Env:
             player.objects = self.obstacles # Setting up obstacles for each player
 
     def step(self, debugging=False):
-        # fill the screen with a color to wipe away anything from last frame
-        self.world_surface.fill("purple")
+        # Fill the world surface with a color to clear the previous frame.
+        if not self.training_mode:
+            self.world_surface.fill("purple")
 
         players_info = {}
         alive_players = []
@@ -116,7 +123,9 @@ class Env:
             if player.alive:
                 alive_players.append(player)
                 player.reload()
-                player.draw(self.world_surface)
+                # Only draw if not in training mode.
+                if not self.training_mode:
+                    player.draw(self.world_surface)
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -132,7 +141,6 @@ class Env:
                     player.add_rotate(actions["rotate"])
                 if actions["shoot"]:
                     player.shoot()
-
             players_info[player.username] = player.get_info()
 
         new_dic = {
@@ -143,24 +151,28 @@ class Env:
             "players_info": players_info
         }
 
-        # Check if game is over
         if len(alive_players) == 1:
-            print("Game Over, winner is:", alive_players[0].username)
-            self.world_surface.fill("green")  # "Victory Screen" improve this
-            pygame.display.flip()
-            time.sleep(0.5) # remove this if not needed
-
-            #self.running = False
-            return True, new_dic # Game is over
+            if not self.training_mode:
+                print("Game Over, winner is:", alive_players[0].username)
+                self.world_surface.fill("green")
+                pygame.display.flip()
+                time.sleep(0.5)
+            return True, new_dic
 
         for obstacle in self.obstacles:
-            obstacle.draw(self.world_surface)
+            if not self.training_mode:
+                obstacle.draw(self.world_surface)
 
-        # flip() the display to put your work on screen
-        # Scale the off-screen world surface to the display window size
-        scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
-        self.screen.blit(scaled_surface, (0, 0))
-        pygame.display.flip()
+        if not self.training_mode:
+            scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
+            self.screen.blit(scaled_surface, (0, 0))
+            pygame.display.flip()
+
+        # In training mode, you might not call tick or you can use a high tick rate.
+        if not self.training_mode:
+            self.clock.tick(120)
+        else:
+            self.clock.tick(10000000)  # Use a high FPS limit in training mode.
 
         return False, new_dic
 

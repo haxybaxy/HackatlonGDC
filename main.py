@@ -16,13 +16,13 @@ def main():
     n_of_obstacles = 25
 
     # Create the environment.
-    env = Env(should_display=True,
+    env = Env(training=False,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,
               display_height=display_height,
               n_of_obstacles=n_of_obstacles)
-    screen = env.screen
+    screen = env.world_surface
     world_bounds = env.get_world_bounds()
 
     # Setup two players (characters) with starting positions.
