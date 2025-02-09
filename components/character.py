@@ -17,7 +17,7 @@ class Character:
         self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
-        self.distance_vision = 200
+        self.distance_vision = 1500
         self.damage = 20
         self.delay = 0.3 #(between shoots), a lot of time so it is longer but more intense
         self.max_ammo = 30
@@ -50,6 +50,7 @@ class Character:
             "rays": self.get_rays(),
             "current_ammo": self.current_ammo,
             "alive": self.alive,
+            "health": self.health,
             "kills": self.total_kills,
             "damage_dealt": self.damage_dealt,
             "meters_moved": self.meters_moved,

@@ -1,8 +1,9 @@
+import math
 import time
 import pygame
 from components.character import Character
 from components.world_gen import spawn_objects
-from components.clean_bot import MyBot
+from components.my_bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
@@ -44,6 +45,9 @@ class Env:
         self.bots = None
         self.players = None
         self.obstacles = None
+
+        """REWARD VARIABLES"""
+        self.last_positions = {}
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
@@ -150,7 +154,7 @@ class Env:
         return False, new_dic
 
     """TO MODIFY"""
-    def calculate_reward(self, info_dictionary, bot_username):
+    def calculate_reward_empty(self, info_dictionary, bot_username):
         """THIS FUNCTION IS USED TO CALCULATE THE REWARD FOR A BOT"""
         """NEEDS TO BE WRITTEN BY YOU TO FINE TUNE YOURS"""
 
@@ -180,4 +184,47 @@ class Env:
 
         return reward
 
+    def calculate_reward(self, info_dictionary, bot_username):
+        """
+        Reward function for training bots.
+        Calculates movement since last frame and rewards attacking/killing.
+        """
+        players_info = info_dictionary.get("players_info", {})
+        bot_info = players_info.get(bot_username)
+
+        if bot_info is None:
+            print(f"Bot {bot_username} not found in info dictionary.")
+            return 0  # No reward if bot isn't found.
+
+        # Extract necessary variables
+        current_position = bot_info.get("location", [0, 0])
+        damage_dealt = bot_info.get("damage_dealt", 0)
+        kills = bot_info.get("kills", 0)
+        alive = bot_info.get("alive", False)
+        total_rotation = bot_info.get("total_rotation", 0)
+
+        # Compute movement since last step
+        last_position = self.last_positions.get(bot_username, current_position)
+        distance_moved = math.dist(current_position, last_position)  # Euclidean distance
+
+        # Update stored position
+        self.last_positions[bot_username] = current_position
+
+        # Reward calculation
+        reward = 0
+
+        # Encourage movement
+        reward += distance_moved * 0.1  # Reward per unit moved
+
+        # Reward attacking enemies
+        reward += damage_dealt * 1  # 1 point per damage dealt
+
+        # Reward kills
+        reward += kills * 10  # Big reward for killing an enemy
+
+        # Penalize dying
+        if not alive:
+            reward -= 5  # Death penalty
+
+        return reward
 
