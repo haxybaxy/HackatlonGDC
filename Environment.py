@@ -173,6 +173,7 @@ class Env:
         damage_dealt = bot_info.get("damage_dealt", 0)
         meters_moved = bot_info.get("meters_moved", 0)
         total_rotation = bot_info.get("total_rotation", 0)
+        health = bot_info.get("health", 0)
 
         # Calculate reward:
         reward = 0

@@ -50,6 +50,7 @@ class Character:
             "rays": self.get_rays(),
             "current_ammo": self.current_ammo,
             "alive": self.alive,
+            "health": self.health,
             "kills": self.total_kills,
             "damage_dealt": self.damage_dealt,
             "meters_moved": self.meters_moved,
