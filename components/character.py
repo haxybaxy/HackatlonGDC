@@ -193,11 +193,14 @@ class Character:
             for player in self.players:
                 point = find_hit_point_on_rectangle(self.get_center(), end_position, player.rect)
                 if point is not None:
-                    res = player.do_damage(damage, self)
-                    if res[0]:
-                        self.total_kills += 1
+                    if damage > 0:
+                        res = player.do_damage(damage, self)
+                        if res[0]:
+                            self.total_kills += 1
+                        else:
+                            self.damage_dealt += res[1]
                     else:
-                        self.damage_dealt += res[1]
+                        print("Saw player")
 
                     # Calculate distance to current intersection
                     current_distance = distance_between_points(self.get_center(), point)
@@ -286,8 +289,7 @@ class Character:
 
         for ray in self.rays:
             if ray[2] == "player":
-                print("hit player, did damage", self.damage)
-                color = "red"
+                color = "green"
             elif ray[2] == "object":
                 color = "yellow"
             else:
