@@ -1,4 +1,5 @@
 import math
+import os
 import random
 import time
 import pygame
@@ -36,6 +37,9 @@ class Env:
         if not self.training_mode:
             self.screen = pygame.display.set_mode((display_width, display_height))
         else:
+            os.environ['SDL_VIDEODRIVER'] = 'dummy'  # Disable actual video output
+            pygame.display.set_mode((1, 1))  # Minimal display
+
             self.screen = pygame.Surface((display_width, display_height))
 
         # REAL WORLD DIMENSIONS
@@ -139,6 +143,12 @@ class Env:
         self.last_kills = {}
         self.last_health = {}
         self.visited_areas = {}
+
+        self.visited_areas.clear()
+        self.last_positions.clear()
+        self.last_health.clear()
+        self.last_kills.clear()
+        self.last_damage.clear()
 
         self.steps = 0
 
