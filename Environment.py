@@ -1,3 +1,4 @@
+import random
 import time
 import pygame
 from components.character import Character
@@ -60,24 +61,24 @@ class Env:
         self.obstacles = None
 
     def create_background(self):
-        background = pygame.Surface((self.width, self.height))
+        background = pygame.Surface((self.world_width, self.world_height))
         background.fill(self.theme.colors['background'])
 
         #Grass pattern
-        for x in range(0, self.width, 10):
-            for y in range(0, self.height, 10):
+        for x in range(0, self.world_width, 10):
+            for y in range(0, self.world_height, 10):
                 if random.random() < 0.3: #30% chance for grass detail
                     size = random.randint(2,4)
                     color = random.choice(self.theme.colors['grass'])
                     pygame.draw.circle(background, color, (x,y), size)
 
         #Grid
-        grid_surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        for x in range(0, self.width, self.theme.grid_size):
-            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.height), self.theme.grid_line_width)
-        for y in range(0, self.height, self.theme.grid_size):
+        grid_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
+        for x in range(0, self.world_width, self.theme.grid_size):
+            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.world_height), self.theme.grid_line_width)
+        for y in range(0, self.world_height, self.theme.grid_size):
             pygame.draw.line(grid_surface, self.theme.colors['grid'],
-                             (0, y), (self.width, y), self.theme.grid_line_width)
+                             (0, y), (self.world_width, y), self.theme.grid_line_width)
 
         background.blit(grid_surface, (0, 0))
         return background
@@ -208,7 +209,7 @@ class Env:
             winner_screen = self.background.copy()
             font = pygame.font.Font(None, 74)
             text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.width/2, self.height/2))
+            text_rect = text.get_rect(center=(self.world_width/2, self.world_height/2))
             winner_screen.blit(text, text_rect)
             self.world_surface.blit(winner_screen, (0, 0))
             

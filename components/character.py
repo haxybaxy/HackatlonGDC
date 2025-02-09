@@ -17,7 +17,7 @@ class Character:
         self.collision_w_objects = True # turn off if you want to move through objects
         self.health = 100
         self.speed = speed
-        self.distance_vision = 200
+        self.distance_vision = 1500
         self.damage = 20
         self.delay = 0.3 #(between shoots), a lot of time so it is longer but more intense
         self.max_ammo = 30
@@ -208,6 +208,25 @@ class Character:
                     if current_distance < closest_distance:
                         closest_end_position = (point[0], point[1])
                         hit_type = "player"
+                        hit_distance = current_distance
+
+            # NEW: Check collision with world bounds.
+            if self.max_boundaries is not None:
+                # Create a rectangle representing the world boundaries.
+                world_rect = pygame.Rect(
+                    self.max_boundaries[0],
+                    self.max_boundaries[1],
+                    self.max_boundaries[2] - self.max_boundaries[0],
+                    self.max_boundaries[3] - self.max_boundaries[1]
+                )
+                boundary_point = find_hit_point_on_rectangle(self.get_center(), end_position, world_rect)
+                if boundary_point is not None:
+                    current_distance = distance_between_points(self.get_center(), boundary_point)
+                    closest_distance = distance_between_points(self.get_center(), closest_end_position)
+                    if current_distance < closest_distance:
+                        closest_end_position = (boundary_point[0], boundary_point[1])
+                        # We treat the boundary as an object (or obstacle).
+                        hit_type = "object"
                         hit_distance = current_distance
 
             # Add the ray with its closest intersection point (or original endpoint if no intersection)
