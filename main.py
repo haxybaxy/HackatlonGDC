@@ -6,6 +6,7 @@ from Environment import Env
 from components.my_bot import MyBot
 from components.character import Character
 
+screen = pygame.display.set_mode((800, 800))
 
 def main():
     # Environment parameters.
@@ -17,7 +18,7 @@ def main():
 
     # Create the environment.
     env = Env(training=False,
-              use_game_ui=False,
+              use_game_ui=True,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,

@@ -1,19 +1,18 @@
 import math
 import os
 import time
-
 import pygame
-
 from advanced_UI import game_UI
 from components.world_gen import spawn_objects
 
 
-#TODO: add controls for multiple players
-#TODO: add dummy bots so that they can train models
+# TODO: add controls for multiple players
+# TODO: add dummy bots so that they can train models
 
 
 class Env:
-    def __init__(self, training=False, use_game_ui=True, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
+    def __init__(self, training=False, use_game_ui=True, world_width=1280, world_height=1280, display_width=640,
+                 display_height=640, n_of_obstacles=10):
         pygame.init()
 
         self.training_mode = training
@@ -39,9 +38,14 @@ class Env:
 
         self.clock = pygame.time.Clock()
         self.running = True
+
         self.use_advanced_UI = use_game_ui
         if self.use_advanced_UI:
-            self.advanced_UI = game_UI(self.screen, self.world_width, self.world_height)
+            self.advanced_UI = game_UI(self.world_surface, self.world_width,
+                                       self.world_height)  # Changed to world_surface
+            # Use the obstacles created by game_UI
+            self.OG_obstacles = self.advanced_UI.obstacles
+            self.obstacles = self.OG_obstacles
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
@@ -55,7 +59,6 @@ class Env:
         self.bots = None
         self.players = None
         self.obstacles = None
-
 
         """REWARD VARIABLES"""
         self.last_positions = {}
@@ -71,7 +74,6 @@ class Env:
         self.last_damage.clear()
 
         self.steps = 0
-
 
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
@@ -113,14 +115,18 @@ class Env:
         self.steps = 0
 
         # TODO: add variables for parameters
-        if randomize_objects:
-            self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size, self.min_obstacle_size, self.n_of_obstacles)
+        if self.use_advanced_UI:
+            # Use the obstacles from game_UI
+            self.obstacles = self.advanced_UI.obstacles
         else:
-            if self.OG_obstacles is None:
-                if self.OG_obstacles is None:
-                    self.OG_obstacles = spawn_objects((0, 0, self.world_width, self.world_height), self.max_obstacle_size,
-                                                      self.min_obstacle_size, self.n_of_obstacles)
-
+            # Create new obstacles only if needed
+            if randomize_objects or self.OG_obstacles is None:
+                self.OG_obstacles = spawn_objects(
+                    (0, 0, self.world_width, self.world_height),
+                    self.max_obstacle_size,
+                    self.min_obstacle_size,
+                    self.n_of_obstacles
+                )
             self.obstacles = self.OG_obstacles
 
         self.players = self.OG_players.copy()
@@ -128,7 +134,7 @@ class Env:
         if randomize_players:
             self.bots = self.bots.shuffle()
             for index in range(len(self.players)):
-                self.players[index].related_bot = self.bots[index] # ensuring bots change location
+                self.players[index].related_bot = self.bots[index]  # ensuring bots change location
 
         else:
             for index in range(len(self.players)):
@@ -141,14 +147,13 @@ class Env:
             player.players = temp  # Other players
             player.objects = self.obstacles
 
-
     def step(self, debugging=False):
-        # Fill the world surface with a color to clear the previous frame.
         if not self.training_mode:
-            if not self.use_advanced_UI:
-                self.world_surface.fill("purple")
+            if self.use_advanced_UI:
+                # Use the background from game_UI
+                self.world_surface.blit(self.advanced_UI.background, (0, 0))
             else:
-                self.advanced_UI.display_background(0)
+                self.world_surface.fill("purple")
 
         self.steps += 1
 
@@ -182,7 +187,7 @@ class Env:
                     player.shoot()
 
                 if not self.training_mode:
-                    #Store position for trial
+                    # Store position for trail
                     if not hasattr(player, 'previous_positions'):
                         player.previous_positions = []
                     player.previous_positions.append(player.rect.center)
@@ -207,13 +212,13 @@ class Env:
                 else:
                     self.screen.fill("green")
 
-            #self.running = False
-            return True, new_dic # Game is over
+            # self.running = False
+            return True, new_dic  # Game is over
 
-        elif self.use_advanced_UI:
+        if self.use_advanced_UI:
             self.advanced_UI.draw_everything(new_dic, self.players, self.obstacles)
-
-        if not self.training_mode and not self.use_advanced_UI:
+        elif not self.training_mode:
+            # Draw obstacles manually if not using advanced UI
             for obstacle in self.obstacles:
                 obstacle.draw(self.world_surface)
 
@@ -265,7 +270,6 @@ class Env:
     def calculate_reward(self, info_dictionary, bot_username):
         """
         Reward function for training bots.
-
         Reward components (one-time per step):
           1. Walking: if the bot moves, +1 (only if it moved this step).
           2. Exploring: if the bot enters a new grid cell (e.g., 100x100), +5.
@@ -360,4 +364,3 @@ class Env:
         reward *= time_multiplier
 
         return reward
-

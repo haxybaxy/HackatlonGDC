@@ -1,17 +1,17 @@
+import pygame
 import random
 import time
-
-import pygame
+from components.crystal_obstacle import CrystalObstacle
 
 
 class GameTheme:
     def __init__(self):
         self.colors = {
-            'background': (34, 39, 46), #DArk Blue
-            'grass': [(34, 139, 34), (46, 154, 46)], #Two shades of Green
-            'obstacle': (75, 83, 88), #Grey
-            'grid': (50, 50, 50, 30), #Semi-transparent Grid
-            'player_trail': (255, 255, 255, 30), #Semi-transparent White
+            'background': (34, 39, 46),  # DArk Blue
+            'grass': [(34, 139, 34), (46, 154, 46)],  # Two shades of Green
+            'obstacle': (75, 83, 88),  # Grey
+            'grid': (50, 50, 50, 30),  # Semi-transparent Grid
+            'player_trail': (255, 255, 255, 30),  # Semi-transparent White
         }
         self.grid_size = 50
         self.grid_line_width = 1
@@ -26,31 +26,50 @@ class game_UI:
         self.world_width = world_width
         self.world_height = world_height
 
-        self.bots = []
-        self.obstacles = []
-        self.players = []
-        self.alive_players = []
-
+        # Define obstacle parameters internally
+        self.n_of_obstacles = 10  # Match the default value in Env
+        self.min_obstacle_size = (50, 50)  # Match the default value in Env
+        self.max_obstacle_size = (100, 100)  # Match the default value in Env
 
         self.theme = GameTheme()
-        self.background = self.create_background() #Create background surface once (below)
+        self.obstacles = self.create_obstacles()
+        self.background = self.create_background()
+
+    def create_obstacles(self):
+        obstacles = []
+        for _ in range(self.n_of_obstacles):
+            # Random size within the specified range
+            width = random.randint(self.min_obstacle_size[0], self.max_obstacle_size[0])
+            height = random.randint(self.min_obstacle_size[1], self.max_obstacle_size[1])
+            obstacle_size = (width, height)
+
+            # Random position within world bounds, ensuring obstacles don't go out of bounds
+            x = random.randint(0, self.world_width - obstacle_size[0])
+            y = random.randint(0, self.world_height - obstacle_size[1])
+
+            # Create the crystal obstacle
+            obstacle = CrystalObstacle((x, y), obstacle_size)
+            obstacles.append(obstacle)
+
+        return obstacles
 
     def create_background(self):
         background = pygame.Surface((self.world_width, self.world_height))
         background.fill(self.theme.colors['background'])
 
-        #Grass pattern
+        # Grass pattern
         for x in range(0, self.world_width, 10):
             for y in range(0, self.world_height, 10):
-                if random.random() < 0.3: #30% chance for grass detail
-                    size = random.randint(2,4)
+                if random.random() < 0.3:  # 30% chance for grass detail
+                    size = random.randint(2, 4)
                     color = random.choice(self.theme.colors['grass'])
-                    pygame.draw.circle(background, color, (x,y), size)
+                    pygame.draw.circle(background, color, (x, y), size)
 
-        #Grid
+        # Grid
         grid_surface = pygame.Surface((self.world_width, self.world_height), pygame.SRCALPHA)
         for x in range(0, self.world_width, self.theme.grid_size):
-            pygame.draw.line(grid_surface, self.theme.colors['grid'], (x, 0), (x, self.world_height), self.theme.grid_line_width)
+            pygame.draw.line(grid_surface, self.theme.colors['grid'],
+                             (x, 0), (x, self.world_height), self.theme.grid_line_width)
         for y in range(0, self.world_height, self.theme.grid_size):
             pygame.draw.line(grid_surface, self.theme.colors['grid'],
                              (0, y), (self.world_width, y), self.theme.grid_line_width)
@@ -72,24 +91,34 @@ class game_UI:
         self.screen.blit(winner_screen, (0, 0))
 
         pygame.display.flip()
-        time.sleep(0.5)  # remove this if not needed - I sure need it
+        time.sleep(0.5)
 
     def draw_everything(self, dictionary, players, obstacles):
-        # here use self.screen and draw what you want, characters ecc ecc
+        self.screen.blit(self.background, (0, 0))
 
-        # retrieve the players' information from the dictionary
+        # Draw obstacles
+        for obstacle in obstacles:
+            obstacle.draw(self.screen)
+
+        # Draw players
+        for player in players:
+            if player.alive:
+                player.draw(self.screen)
+
+        pygame.display.flip()
+
+        # Retrieve players' information
         players_info = dictionary.get("players_info", {})
 
         for bot_info in players_info:
+            print(bot_info)
 
-            #bot_info = players_info.get(bot_username)
-
-            # if the bot is not found, return a default reward of 0
+            bot_info = players_info.get(bot_info)
             if bot_info is None:
                 print("Bot not found in the dictionary")
                 return 0
 
-            # Extract variables from the bot's info
+            # Extract variables from bot's info
             location = bot_info.get("location", [0, 0])
             rotation = bot_info.get("rotation", 0)
             rays = bot_info.get("rays", [])
@@ -100,6 +129,3 @@ class game_UI:
             meters_moved = bot_info.get("meters_moved", 0)
             total_rotation = bot_info.get("total_rotation", 0)
             health = bot_info.get("health", 0)
-
-
-        #NOT SURE IF THIS WORKS
