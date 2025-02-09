@@ -16,7 +16,7 @@ def main():
     n_of_obstacles = 25
 
     # Create the environment.
-    env = Env(training=True,
+    env = Env(training=False,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,
