@@ -242,6 +242,7 @@ class Character:
                 if time.time() - self.start_reloading_time >= self.time_to_reload:
                     self.current_ammo = self.max_ammo
                     self.start_reloading_time = None
+                    self.is_reloading = False
 
     """PYGAME"""
     def do_damage(self, damage, by_player=None):
@@ -284,7 +285,14 @@ class Character:
         # Draw rays with different colors based on hit type
 
         for ray in self.rays:
-            color = "yellow" if ray[1] == "object" else "green"
+            if ray[2] == "player":
+                print("hit player, did damage", self.damage)
+                color = "red"
+            elif ray[2] == "object":
+                color = "yellow"
+            else:
+                color = "gray"
+
             pygame.draw.line(screen, color, ray[0][0], ray[0][1], 5)
 
         # Draw health and ammo
