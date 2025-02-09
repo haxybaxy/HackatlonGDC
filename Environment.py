@@ -210,7 +210,7 @@ class Env:
             #self.running = False
             return True, new_dic # Game is over
 
-        else:
+        elif self.use_advanced_UI:
             self.advanced_UI.draw_everything(new_dic)
 
         if not self.training_mode and not self.use_advanced_UI:
