@@ -1,9 +1,10 @@
+import math
 import random
 import time
 import pygame
 from components.character import Character
 from components.world_gen import spawn_objects
-from components.clean_bot import MyBot
+from components.my_bot import MyBot
 #TODO: add controls for multiple players
 #TODO: add dummy bots so that they can train models
 
@@ -22,16 +23,20 @@ class GameTheme:
 
 
 class Env:
-    def __init__(self, should_display=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
+    def __init__(self, training=False, world_width=1280, world_height=1280, display_width=640, display_height=640, n_of_obstacles=10):
         pygame.init()
 
-        self.screen = pygame.display.set_mode((display_width, display_height))
+        self.training_mode = training
 
         # ONLY FOR DISPLAY
         # Create display window with desired display dimensions
         self.display_width = display_width
         self.display_height = display_height
-        self.screen = pygame.display.set_mode((display_width, display_height))
+        # Only create a window if not in training mode
+        if not self.training_mode:
+            self.screen = pygame.display.set_mode((display_width, display_height))
+        else:
+            self.screen = pygame.Surface((display_width, display_height))
 
         # REAL WORLD DIMENSIONS
         # Create an off-screen surface for the game world
@@ -45,8 +50,6 @@ class Env:
 
         self.background = self.create_background() #Create background surface once (below)
 
-        self.display = should_display # If you want to display the game or not
-
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
         self.max_obstacle_size = (100, 100)
@@ -59,6 +62,15 @@ class Env:
         self.bots = None
         self.players = None
         self.obstacles = None
+
+
+        """REWARD VARIABLES"""
+        self.last_positions = {}
+        self.last_damage = {}
+        self.last_kills = {}
+        self.last_health = {}
+        self.visited_areas = {}
+
 
     def create_background(self):
         background = pygame.Surface((self.world_width, self.world_height))
@@ -99,6 +111,7 @@ class Env:
         pygame.draw.rect(highlight, (255, 255, 255, 30), highlight.get_rect(), border_radius=8)
         self.screen.blit(highlight, obstacle.rect)
 
+
     def set_players_bots_objects(self, players, bots, obstacles=None):
         self.OG_players = players
         self.OG_bots = bots
@@ -111,9 +124,20 @@ class Env:
 
     def reset(self, randomize_objects=False, randomize_players=False):
         self.running = True
-        self.screen.blit(self.background, (0, 0))
-        pygame.display.flip()
-        time.sleep(1)
+        if not self.training_mode:
+            self.screen.blit(self.background, (0, 0))
+            pygame.display.flip()
+            time.sleep(1)
+        else:
+            # In training mode, you might simply clear the screen without delay.
+            self.screen.fill("green")
+
+        self.last_positions = {}
+        self.last_damage = {}
+        self.last_kills = {}
+        self.last_health = {}
+        self.visited_areas = {}
+
 
         # TODO: add variables for parameters
         if randomize_objects:
@@ -148,8 +172,9 @@ class Env:
                 player.previous_positions = []
 
     def step(self, debugging=False):
-        # fill the screen with a color to wipe away anything from last frame
-        self.world_surface.blit(self.background, (0,0))
+        # Fill the world surface with a color to clear the previous frame.
+        if not self.training_mode:
+            self.world_surface.blit(self.background, (0,0))
 
         players_info = {}
         alive_players = []
@@ -167,8 +192,10 @@ class Env:
                 alive_players.append(player)
                 player.reload()
 
-                player.draw(self.world_surface)
-                
+                # Only draw if not in training mode.
+                if not self.training_mode:
+                    player.draw(self.world_surface)
+        
                 actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
@@ -202,37 +229,41 @@ class Env:
             "players_info": players_info
         }
 
-        # Check if game is over
         if len(alive_players) == 1:
             print("Game Over, winner is:", alive_players[0].username)
+            if not self.training_mode:
+                winner_screen = self.background.copy()
+                font = pygame.font.Font(None, 74)
+                text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.world_width/2, self.world_height/2))
+                winner_screen.blit(text, text_rect)
+                self.world_surface.blit(winner_screen, (0, 0))
 
-            winner_screen = self.background.copy()
-            font = pygame.font.Font(None, 74)
-            text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.world_width/2, self.world_height/2))
-            winner_screen.blit(text, text_rect)
-            self.world_surface.blit(winner_screen, (0, 0))
-            
-            pygame.display.flip()
-            time.sleep(0.5) # remove this if not needed - I sure need it
+                pygame.display.flip()
+                time.sleep(0.5) # remove this if not needed - I sure need it
 
             #self.running = False
             return True, new_dic # Game is over
 
         for obstacle in self.obstacles:
+            if not self.training_mode:
+                obstacle.draw(self.world_surface)
 
-            obstacle.draw(self.world_surface)
+        if not self.training_mode:
+            scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
+            self.screen.blit(scaled_surface, (0, 0))
+            pygame.display.flip()
 
-        # flip() the display to put your work on screen
-        # Scale the off-screen world surface to the display window size
-        scaled_surface = pygame.transform.scale(self.world_surface, (self.display_width, self.display_height))
-        self.screen.blit(scaled_surface, (0, 0))
-        pygame.display.flip()
+        # In training mode, you might not call tick or you can use a high tick rate.
+        if not self.training_mode:
+            self.clock.tick(120)
+        else:
+            self.clock.tick(10000000)  # Use a high FPS limit in training mode.
 
         return False, new_dic
 
     """TO MODIFY"""
-    def calculate_reward(self, info_dictionary, bot_username):
+    def calculate_reward_empty(self, info_dictionary, bot_username):
         """THIS FUNCTION IS USED TO CALCULATE THE REWARD FOR A BOT"""
         """NEEDS TO BE WRITTEN BY YOU TO FINE TUNE YOURS"""
 
@@ -263,4 +294,95 @@ class Env:
 
         return reward
 
+    def calculate_reward(self, info_dictionary, bot_username):
+        """
+        Reward function for training bots.
+
+        Reward components (one-time per step):
+          1. Walking: if the bot moves, +1 (only if it moved this step).
+          2. Exploring: if the bot enters a new grid cell (e.g., 100x100), +5.
+          3. Damage: reward the difference in damage inflicted this frame.
+          4. Kill: reward massively for new kills (+20 per kill).
+          5. Missing: if a shot was fired and no damage was dealt, -1.
+          6. Getting hit: if health decreases compared to last step, negative penalty.
+          7. Staying near borders: if within 50 pixels of any border, -1.
+        """
+        players_info = info_dictionary.get("players_info", {})
+        bot_info = players_info.get(bot_username)
+        if bot_info is None:
+            print(f"Bot {bot_username} not found in info dictionary.")
+            return 0
+
+        # Extract current values
+        current_position = bot_info.get("location", [0, 0])
+        damage_dealt = bot_info.get("damage_dealt", 0)
+        kills = bot_info.get("kills", 0)
+        alive = bot_info.get("alive", False)
+        health = bot_info.get("health", 100)
+        # Expect a flag indicating if a shot was fired this frame
+        shot_fired = bot_info.get("shot_fired", False)
+
+        # Initialize tracking dictionaries if necessary
+        if bot_username not in self.last_positions:
+            self.last_positions[bot_username] = current_position
+        if bot_username not in self.last_damage:
+            self.last_damage[bot_username] = damage_dealt
+        if bot_username not in self.last_kills:
+            self.last_kills[bot_username] = kills
+        if bot_username not in self.last_health:
+            self.last_health[bot_username] = health
+        if bot_username not in self.visited_areas:
+            self.visited_areas[bot_username] = set()
+
+        reward = 0
+
+        # 1. Walking reward (one-time): if moved at all, +1
+        distance_moved = math.dist(current_position, self.last_positions[bot_username])
+        if distance_moved > 0:
+            reward += 1
+
+        # 2. Exploration reward (one-time): if entering a new grid cell, +5
+        grid_size = 100  # You can adjust the grid size as needed.
+        cell = (int(current_position[0] // grid_size), int(current_position[1] // grid_size))
+        if cell not in self.visited_areas[bot_username]:
+            reward += 5
+            self.visited_areas[bot_username].add(cell)
+
+        # 3. Damage reward: reward the damage inflicted this frame.
+        delta_damage = damage_dealt - self.last_damage[bot_username]
+        if delta_damage > 0:
+            reward += delta_damage  # 1 point per damage unit
+
+        # 4. Kill reward: massive reward for new kills.
+        delta_kills = kills - self.last_kills[bot_username]
+        if delta_kills > 0:
+            reward += delta_kills * 20  # 20 points per kill
+
+        # 5. Negative reward for missing: if a shot was fired and no damage occurred.
+        if shot_fired and delta_damage <= 0:
+            reward -= 1
+
+        # 6. Negative reward if hit by enemy: if health decreased.
+        delta_health = self.last_health[bot_username] - health
+        if delta_health > 0:
+            reward -= delta_health * 0.2  # adjust penalty factor as needed
+
+        # 7. Negative reward for staying near the borders.
+        border_threshold = 50
+        near_border = (
+                current_position[0] < border_threshold or
+                current_position[0] > self.world_width - border_threshold or
+                current_position[1] < border_threshold or
+                current_position[1] > self.world_height - border_threshold
+        )
+        if near_border:
+            reward -= 1
+
+        # Update tracking values for next step.
+        self.last_positions[bot_username] = current_position
+        self.last_damage[bot_username] = damage_dealt
+        self.last_kills[bot_username] = kills
+        self.last_health[bot_username] = health
+
+        return reward
 

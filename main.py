@@ -1,56 +1,101 @@
 import time
 
+import pygame
+
 from Environment import Env
-from components.clean_bot import MyBot
+from components.my_bot import MyBot
 from components.character import Character
 
 
-if __name__ == "__main__":
-    # game space is 1280x1280
+def main():
+    # Environment parameters.
+    world_width = 1280
+    world_height = 1280
+    display_width = 800
+    display_height = 800
+    n_of_obstacles = 25
 
-    environment = Env(display_width=800, display_height=800, n_of_obstacles=25)
-    screen = environment.screen
+    # Create the environment.
+    env = Env(training=False,
+              world_width=world_width,
+              world_height=world_height,
+              display_width=display_width,
+              display_height=display_height,
+              n_of_obstacles=n_of_obstacles)
+    screen = env.world_surface
+    world_bounds = env.get_world_bounds()
 
-    world_bounds = environment.get_world_bounds()
-
-
-    """SETTING UP CHARACTERS >>> UPDATE THIS"""
+    # Setup two players (characters) with starting positions.
     players = [
-
-    Character((world_bounds[2]-100, world_bounds[3]-100), screen, boundaries=world_bounds, username="Ninja"),
-
-    Character((world_bounds[0], world_bounds[1]), screen, boundaries=world_bounds, username="Faze Jarvis")
-
+        Character((world_bounds[2] - 100, world_bounds[3] - 100),
+                  screen, boundaries=world_bounds, username="Ninja"),
+        Character((world_bounds[0], world_bounds[1]),
+                  screen, boundaries=world_bounds, username="Faze Jarvis")
     ]
 
-    """ENSURE THERE ARE AS MANY BOTS AS PLAYERS >>> UPDATE THIS"""
-    bots = [
+    # Define the state size based on the info returned by get_info().
+    # In this example, we assume:
+    #   - location: 2 values
+    #   - rotation: 1 value
+    #   - current_ammo: 1 value
+    #   - rays: 8 values (adjust as needed)
+    # Total state size = 2 + 1 + 1 + 8 = 12
 
-        MyBot(),
-        MyBot()
+    state_size = 34  # Adjusted for the new processed state vector
 
-    ]
+    bots = [MyBot(state_size=state_size), MyBot(state_size=state_size)]
 
-    environment.set_players_bots_objects(players, bots) # Environment should be ready
+    # Link players, bots, and obstacles into the environment.
+    env.set_players_bots_objects(players, bots)
 
-    time_limit = 120 # Time limit to force a match to end
-    epochs = 100
+    # Training / Game parameters.
+    time_limit = 120  # seconds per episode
+    num_epochs = 100  # number of episodes
 
-    # THIS WILL PERFORM A SINGLE GAME
-    for epochs in range(epochs):
+    for epoch in range(num_epochs):
+        print(f"Starting epoch {epoch + 1}")
+        # Reset the environment (randomizing obstacles for variety).
+        env.reset(randomize_objects=True)
         start_time = time.time()
+
         while True:
-            if start_time + time_limit < time.time():
-                print("Game Over, time limit reached")
+            # If the time limit for this episode has been reached, break.
+            if time.time() - start_time > time_limit:
+                print("Time limit reached for this episode.")
                 break
 
-            finished, info = environment.step()
-            for player in players:
-                reward = environment.calculate_reward(info, player.username)
-                print("Reward for", player.username, "is:", reward)
+            # Take a step in the environment.
+            # The environment calls each player's .act() method, which in turn uses the bot.
+            finished, info = env.step(debugging=False)
 
-            print(info)
+            # For each player, calculate reward, update bot memory, and train the bot.
+            for player, bot in zip(players, bots):
+                # Calculate the reward for the current step (adjust calculate_reward as needed).
+                reward = env.calculate_reward(info, player.username)
+                # Retrieve the updated state for the player.
+                next_info = player.get_info()
+                # Store the transition (last state, action, reward, next state, done).
+                bot.remember(reward, next_info, finished)
+                # Train the bot from experience.
+                bot.replay()
+
+                print(f"Reward for {player.username}: {reward}")
+
+            # If the game/episode is over, break out of the loop.
             if finished:
+                print("Episode finished.")
                 break
-            else:
-                environment.clock.tick(120) # 120 FPS
+
+            # Maintain desired FPS.
+            env.clock.tick(120)
+
+        # Optionally, save the model weights after each epoch.
+        for idx, bot in enumerate(bots):
+            save_path = f"bot_model_{idx}.pth"
+            bot.save(save_path)
+            print(f"Saved model for player {players[idx].username} to {save_path}")
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
