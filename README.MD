@@ -8,7 +8,7 @@ The environment consists of the following key elements:
 - **Players:** Characters controlled by the bots.
 - **Bots:** AI or Manually Tuned agents that make decisions based on observations.
 - **Obstacles:** Objects in the game world that players must navigate around.
-- **Game World:** A 2D grid with defined boundaries (1280x1280 by default, this value should not be changed). (Note that the window might be larger than your computer supports)
+- **Game World:** A 2D grid with defined boundaries (1280x1280) by default, this value should not be changed). (Note that the window might be larger than your computer supports)
 
 ## Setting Up the Environment
 To initialize the environment:
