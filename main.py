@@ -16,9 +16,12 @@ def main():
     display_height = 800
     n_of_obstacles = 25
 
+    load_back = True
+    state_size = 34
+
     # Create the environment.
     env = Env(training=False,
-              use_game_ui=True,
+              use_game_ui=False,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,
@@ -44,14 +47,17 @@ def main():
     #   - rays: 8 values (adjust as needed)
     # Total state size = 2 + 1 + 1 + 8 = 12
 
-    state_size = 34  # Adjusted for the new processed state vector
 
-    bots = [MyBot(state_size=state_size), MyBot(state_size=state_size)]
+    bots = [MyBot(), MyBot()]
 
-    for idx, bot in enumerate(bots):
-        save_path = f"bot_model_{idx}.pth"
-        bot.load(save_path)
-        print(f"Load model for player {players[idx].username} from {save_path}")
+    if load_back:
+        for idx, bot in enumerate(bots):
+            save_path = f"bot_model_{idx}.pth"
+            try:
+                bot.load(save_path)
+                print(f"Load model for player {players[idx].username} from {save_path}")
+            except:
+                print(f"Failed to load model for player {players[idx].username} from {save_path}")
 
     # Link players, bots, and obstacles into the environment.
     env.set_players_bots_objects(players, bots)
