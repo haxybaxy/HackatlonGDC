@@ -41,11 +41,9 @@ class Env:
 
         self.use_advanced_UI = use_game_ui
         if self.use_advanced_UI:
-            self.advanced_UI = game_UI(self.world_surface, self.world_width,
-                                       self.world_height)  # Changed to world_surface
-            # Use the obstacles created by game_UI
-            self.OG_obstacles = self.advanced_UI.obstacles
-            self.obstacles = self.OG_obstacles
+
+        self.advanced_UI = game_UI(self.world_surface, self.world_width, self.world_height)
+
 
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)

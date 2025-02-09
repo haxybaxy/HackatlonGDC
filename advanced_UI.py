@@ -114,6 +114,8 @@ class game_UI:
             print(bot_info)
 
             bot_info = players_info.get(bot_info)
+
+            # if the bot is not found, return a default reward of 0
             if bot_info is None:
                 print("Bot not found in the dictionary")
                 return 0
