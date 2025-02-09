@@ -146,7 +146,7 @@ class Env:
         # Fill the world surface with a color to clear the previous frame.
         if not self.training_mode:
             if not self.use_advanced_UI:
-                self.world_surface.fill("green")
+                self.world_surface.fill("purple")
             else:
                 self.advanced_UI.display_background(0)
 
@@ -211,7 +211,7 @@ class Env:
             return True, new_dic # Game is over
 
         elif self.use_advanced_UI:
-            self.advanced_UI.draw_everything(new_dic)
+            self.advanced_UI.draw_everything(new_dic, self.players, self.obstacles)
 
         if not self.training_mode and not self.use_advanced_UI:
             for obstacle in self.obstacles:
