@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import math
 from components.crystal_obstacle import CrystalObstacle
 
 class GameTheme:
@@ -111,6 +112,55 @@ class game_UI:
         self.screen.blit(self.background, (0, 0))
         pygame.display.flip()
         time.sleep(time_delay)
+
+    def display_opening_screen(self):
+        screen = pygame.display.get_surface()
+        screen_width, screen_height = screen.get_size()
+        start_time = pygame.time.get_ticks()
+
+        bg_color = (25, 10, 40)  # Deep space purple
+        title_color = (255, 255, 255)  # Bright white
+        subtitle_color = (200, 200, 255)  # Soft light blue
+        star_colors = [(255, 255, 255), (200, 200, 255), (150, 150, 255)]
+
+        while True:
+            screen.fill(bg_color)
+
+            # Draw starry background
+            for _ in range(200):
+                x = random.randint(0, screen_width)
+                y = random.randint(0, screen_height)
+                color = random.choice(star_colors)
+                size = random.randint(1, 3)
+                pygame.draw.circle(screen, color, (x, y), size)
+
+            # Title with shadow effect
+            title_font = pygame.font.Font(None, 86)
+            title_text = title_font.render("COSMIC BATTLE", True, title_color)
+            shadow_text = title_font.render("COSMIC BATTLE", True, (50, 50, 100))
+
+            title_rect = title_text.get_rect(center=(screen_width / 2, screen_height / 3))
+            shadow_rect = shadow_text.get_rect(center=(screen_width / 2, screen_height / 3 + 3))
+
+            screen.blit(shadow_text, shadow_rect)
+            screen.blit(title_text, title_rect)
+
+            # Subtitle with subtle animation
+            subtitle_font = pygame.font.Font(None, 44)
+            subtitle_text = subtitle_font.render("Press Any Key to Start", True, subtitle_color)
+            subtitle_rect = subtitle_text.get_rect(center=(screen_width / 2, screen_height / 2 + 100))
+
+            # Blinking effect
+            if (pygame.time.get_ticks() // 500) % 2 == 0:
+                screen.blit(subtitle_text, subtitle_rect)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                    return
+
+            pygame.time.delay(40)
 
     def display_winner_screen(self, alive_players):
         winner_screen = self.background.copy()
