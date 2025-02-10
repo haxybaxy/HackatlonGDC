@@ -43,6 +43,9 @@ class Env:
         if self.use_advanced_UI:
             self.advanced_UI = game_UI(self.world_surface, self.world_width, self.world_height)
 
+        if not self.training_mode and self.use_advanced_UI:
+            self.advanced_UI.display_opening_screen()
+
         self.n_of_obstacles = n_of_obstacles
         self.min_obstacle_size = (50, 50)
         self.max_obstacle_size = (100, 100)
