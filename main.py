@@ -20,8 +20,8 @@ def main():
     state_size = 34
 
     # Create the environment.
-    env = Env(training=False,
-              use_game_ui=True,
+    env = Env(training=True,
+              use_game_ui=False,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,

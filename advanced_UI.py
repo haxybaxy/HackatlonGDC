@@ -1,8 +1,54 @@
+import os
+
 import pygame
 import random
 import time
 import math
 from components.crystal_obstacle import CrystalObstacle
+
+class GameMusic:
+    def __init__(self):
+        pygame.mixer.init()
+
+        self.current_track = None
+        self.volume = 100
+
+        # Define music tracks
+        self.tracks = {
+            'menu': os.path.join('components', 'music', 'Duran Duran - INVISIBLE.mp3'),
+            'battle': os.path.join('components', 'music', 'Duran Duran - INVISIBLE.mp3'),
+            'victory': os.path.join('components', 'music', 'Duran Duran - INVISIBLE.mp3'),
+            'game_over': os.path.join('components', 'music', 'Duran Duran - INVISIBLE.mp3')
+        }
+
+        self.loaded_tracks = {}
+        for key, filename in self.tracks.items():
+            if os.path.exists(filename):
+                try:
+                    pygame.mixer.music.load(filename)
+                    self.loaded_tracks[key] = filename
+                    print(f"Loaded track: {filename}")
+                except Exception as e:
+                    print(f"Warning: Could not load music track {filename}. Error: {e}")
+            else:
+                print(f"Warning: File {filename} does not exist.")
+
+    def play_track(self, track_name, loop=True):
+        if track_name not in self.loaded_tracks:
+            print(f"Track {track_name} not loaded.")
+            return
+
+        if self.current_track != track_name:
+            pygame.mixer.music.load(self.loaded_tracks[track_name])
+            pygame.mixer.music.set_volume(self.volume)
+            pygame.mixer.music.play(-1 if loop else 0)
+            # Add these debug lines
+            print("\nPlayback status:")
+            print("Current volume:", pygame.mixer.music.get_volume())
+            print("Music busy:", pygame.mixer.music.get_busy())
+            self.current_track = track_name
+            print(f"Now playing: {track_name}")
+
 
 class GameTheme:
     def __init__(self):
@@ -30,6 +76,9 @@ class game_UI:
         self.world_width = world_width
         self.world_height = world_height
         self.theme = GameTheme()
+
+        self.music = GameMusic()
+        self.music.play_track('menu')
 
         # Defining obstacle parameters internally
         self.n_of_obstacles = 20
