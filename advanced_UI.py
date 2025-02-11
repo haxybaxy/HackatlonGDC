@@ -6,6 +6,7 @@ import time
 import math
 from components.crystal_obstacle import CrystalObstacle
 
+
 class GameMusic:
     def __init__(self):
         pygame.mixer.init()
@@ -81,7 +82,7 @@ class game_UI:
         self.music.play_track('menu')
 
         # Defining obstacle parameters internally
-        self.n_of_obstacles = 20
+        self.n_of_obstacles = 0
         self.min_obstacle_size = (50, 50)
         self.max_obstacle_size = (100, 100)
 
@@ -210,6 +211,57 @@ class game_UI:
                     return
 
             pygame.time.delay(40)
+
+    def display_reset_screen(self):
+        screen = pygame.display.get_surface()
+        screen_width, screen_height = screen.get_size()
+
+        reset_screen = self.background.copy()
+
+        # Fog effect
+        for _ in range(10):
+            x = random.randint(0, self.world_width)
+            y = random.randint(0, self.world_height)
+            size = random.randint(100, 200)
+            fog_color = (*self.theme.colors['background'][:3], 15)
+            pygame.draw.circle(reset_screen, fog_color, (x, y), size)
+
+        font = pygame.font.Font(None, 86)
+        main_text = font.render("RESETTING GAME", True, (255, 255, 255))
+        main_shadow = font.render("RESETTING GAME", True, (50, 50, 100))
+
+        dots = [".", "..", "..."]
+
+        start_time = time.time()
+        while time.time() - start_time < 2:
+            current_frame = reset_screen.copy()
+
+            # Dot animation
+            current_dots = dots[int(time.time() * 2) % 3]
+            loading_text = font.render(current_dots, True, (200, 200, 255))
+
+            # Text Position
+            main_rect = main_text.get_rect(center=(screen_width / 2, screen_height / 2))
+            shadow_rect = main_shadow.get_rect(center=(screen_width / 2, screen_height / 2 + 3))
+            loading_rect = loading_text.get_rect(center=(screen_width / 2, screen_height / 2 + 60))
+
+            # Main crystal
+            pulse = (math.sin(time.time() * 4) + 1) / 2
+            crystal_color = (173, 216, 230, int(150 * pulse))
+            crystal_points = [
+                (screen_width / 2, screen_height / 2 - 80),
+                (screen_width / 2 - 30, screen_height / 2 - 30),
+                (screen_width / 2 + 30, screen_height / 2 - 30)
+            ]
+            pygame.draw.polygon(current_frame, crystal_color, crystal_points)
+
+            current_frame.blit(main_shadow, shadow_rect)
+            current_frame.blit(main_text, main_rect)
+            current_frame.blit(loading_text, loading_rect)
+
+            self.screen.blit(current_frame, (0, 0))
+            pygame.display.flip()
+            self.clock.tick(60)
 
     def display_winner_screen(self, alive_players):
         winner_screen = self.background.copy()

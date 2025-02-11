@@ -14,14 +14,14 @@ def main():
     world_height = 1280
     display_width = 800
     display_height = 800
-    n_of_obstacles = 25
+    n_of_obstacles  = 25
 
     load_back = True
     state_size = 34
 
     # Create the environment.
-    env = Env(training=True,
-              use_game_ui=False,
+    env = Env(training=False,
+              use_game_ui=True,
               world_width=world_width,
               world_height=world_height,
               display_width=display_width,
