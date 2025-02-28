@@ -91,7 +91,7 @@ class Env:
                 pygame.display.flip()
                 time.sleep(1)
             else:
-                self.advanced_UI.display_background(1)
+                self.advanced_UI.display_reset_screen()
 
         else:
             # In training mode, you might simply clear the screen without delay.
