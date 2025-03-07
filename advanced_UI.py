@@ -82,7 +82,7 @@ class game_UI:
         self.music.play_track('menu')
 
         # Defining obstacle parameters internally
-        self.n_of_obstacles = 0
+        self.n_of_obstacles = 20
         self.min_obstacle_size = (50, 50)
         self.max_obstacle_size = (100, 100)
 
@@ -216,62 +216,113 @@ class game_UI:
         screen = pygame.display.get_surface()
         screen_width, screen_height = screen.get_size()
 
-        reset_screen = self.background.copy()
+        screen.blit(self.background, (0, 0))
 
-        # Fog effect
-        for _ in range(10):
-            x = random.randint(0, self.world_width)
-            y = random.randint(0, self.world_height)
-            size = random.randint(100, 200)
-            fog_color = (*self.theme.colors['background'][:3], 15)
-            pygame.draw.circle(reset_screen, fog_color, (x, y), size)
+        # Add a semi-transparent overlay
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+        overlay.fill((25, 10, 40, 180))  # Semi-transparent deep purple
+        screen.blit(overlay, (0, 0))
 
-        font = pygame.font.Font(None, 86)
-        main_text = font.render("RESETTING GAME", True, (255, 255, 255))
-        main_shadow = font.render("RESETTING GAME", True, (50, 50, 100))
+        reset_font = pygame.font.Font(None, 74)
 
-        dots = [".", "..", "..."]
+        reset_text = reset_font.render("Resetting...", True, (255, 255, 255))
+        glow_text = reset_font.render("Resetting...", True, (147, 112, 219))
 
-        start_time = time.time()
-        while time.time() - start_time < 2:
-            current_frame = reset_screen.copy()
+        glow_rect = glow_text.get_rect(center=(screen_width / 2 + 2, screen_height / 2 + 2))
+        reset_rect = reset_text.get_rect(center=(screen_width / 2, screen_height / 2))
 
-            # Dot animation
-            current_dots = dots[int(time.time() * 2) % 3]
-            loading_text = font.render(current_dots, True, (200, 200, 255))
+        # Draw some stars or crystal particles for effect
+        for _ in range(20):
+            x = random.randint(0, screen_width)
+            y = random.randint(0, screen_height)
+            size = random.randint(2, 5)
+            brightness = random.randint(180, 255)
+            color = (brightness, brightness, brightness)
+            pygame.draw.circle(screen, color, (x, y), size)
 
-            # Text Position
-            main_rect = main_text.get_rect(center=(screen_width / 2, screen_height / 2))
-            shadow_rect = main_shadow.get_rect(center=(screen_width / 2, screen_height / 2 + 3))
-            loading_rect = loading_text.get_rect(center=(screen_width / 2, screen_height / 2 + 60))
+        # Blit the text with glow effect
+        screen.blit(glow_text, glow_rect)
+        screen.blit(reset_text, reset_rect)
 
-            # Main crystal
-            pulse = (math.sin(time.time() * 4) + 1) / 2
-            crystal_color = (173, 216, 230, int(150 * pulse))
-            crystal_points = [
-                (screen_width / 2, screen_height / 2 - 80),
-                (screen_width / 2 - 30, screen_height / 2 - 30),
-                (screen_width / 2 + 30, screen_height / 2 - 30)
-            ]
-            pygame.draw.polygon(current_frame, crystal_color, crystal_points)
-
-            current_frame.blit(main_shadow, shadow_rect)
-            current_frame.blit(main_text, main_rect)
-            current_frame.blit(loading_text, loading_rect)
-
-            self.screen.blit(current_frame, (0, 0))
-            pygame.display.flip()
-            self.clock.tick(60)
+        pygame.display.flip()
+        time.sleep(1)
 
     def display_winner_screen(self, alive_players):
-        winner_screen = self.background.copy()
-        font = pygame.font.Font(None, 74)
-        text = font.render(f"Winner: {alive_players[0].username}!", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(self.world_width / 2, self.world_height / 2))
-        winner_screen.blit(text, text_rect)
-        self.screen.blit(winner_screen, (0, 0))
+        screen = pygame.display.get_surface()
+        screen_width, screen_height = screen.get_size()
+
+        # Start with the game background
+        screen.blit(self.background, (0, 0))
+
+        # Add a victory overlay
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+        overlay.fill((75, 0, 130, 150))  # Semi-transparent indigo
+        screen.blit(overlay, (0, 0))
+
+        # Winner text with glow effect
+        font = pygame.font.Font(None, 86)
+        main_text = font.render(f"VICTORY!", True, (255, 255, 255))
+        glow_text = font.render(f"VICTORY!", True, (147, 112, 219))
+
+        main_rect = main_text.get_rect(center=(screen_width / 2, screen_height / 2 - 50))
+        glow_rect = glow_text.get_rect(center=(screen_width / 2 + 2, screen_height / 2 - 48))
+
+        # Player name
+        name_font = pygame.font.Font(None, 64)
+        name_text = name_font.render(f"{alive_players[0].username}", True, (200, 200, 255))
+        name_rect = name_text.get_rect(center=(screen_width / 2, screen_height / 2 + 30))
+
+        # Draw celebratory particles (crystal shards)
+        for _ in range(100):
+            x = random.randint(0, screen_width)
+            y = random.randint(0, screen_height)
+            size = random.randint(2, 8)
+
+            # Choose between white and purple particles
+            if random.random() > 0.7:
+                color = (255, 255, 255, random.randint(100, 200))
+            else:
+                color = (147, 112, 219, random.randint(100, 200))
+
+            # Draw different shapes for variety
+            shape = random.choice(['circle', 'triangle', 'star'])
+
+            if shape == 'circle':
+                pygame.draw.circle(screen, color, (x, y), size)
+            elif shape == 'triangle':
+                points = [
+                    (x, y - size),
+                    (x + size, y + size),
+                    (x - size, y + size)
+                ]
+                pygame.draw.polygon(screen, color, points)
+            else:  # star - simplified
+                pygame.draw.circle(screen, color, (x, y), size)
+                pygame.draw.circle(screen, (255, 255, 255, 100), (x, y), size // 2)
+
+        # Blit the text elements
+        screen.blit(glow_text, glow_rect)
+        screen.blit(main_text, main_rect)
+        screen.blit(name_text, name_rect)
+
+        # Add a prompt to continue
+        prompt_font = pygame.font.Font(None, 36)
+        prompt_text = prompt_font.render("Press any key to continue...", True, (200, 200, 255))
+        prompt_rect = prompt_text.get_rect(center=(screen_width / 2, screen_height - 100))
+
+        # Only show prompt text every half second (blinking effect)
+        if (pygame.time.get_ticks() // 500) % 2 == 0:
+            screen.blit(prompt_text, prompt_rect)
+
         pygame.display.flip()
-        time.sleep(0.5)
+
+        # Wait for a key press instead of an automatic timeout
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                    waiting = False
+            pygame.time.delay(40)
 
     def draw_everything(self, dictionary, players, obstacles):
         self.screen.blit(self.background, (0, 0))
