@@ -159,16 +159,17 @@ class Env:
         alive_players = []
 
         for player in self.players:
+            actions = player.related_bot.act(player.get_info())
+
             if player.alive:
 
                 alive_players.append(player)
                 player.reload()
 
-                # Only draw if not in training mode.
+                # only draw if not in training mode.
                 if not self.training_mode:
                     player.draw(self.world_surface)
 
-                actions = player.related_bot.act(player.get_info())
                 if debugging:
                     print("Bot would like to do:", actions)
                 if actions["forward"]:
@@ -193,6 +194,9 @@ class Env:
                         player.previous_positions.pop(0)
 
             players_info[player.username] = player.get_info()
+
+            players_info[player.username]["shot_fired"] = actions["shoot"]
+
 
         new_dic = {
             "general_info": {
