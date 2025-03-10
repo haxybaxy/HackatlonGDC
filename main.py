@@ -63,7 +63,7 @@ def main():
     env.set_players_bots_objects(players, bots)
 
     # Training / Game parameters.
-    time_limit = 120  # seconds per episode
+    time_limit = 20  # seconds per episode
     num_epochs = 100  # number of episodes
 
     for epoch in range(num_epochs):
