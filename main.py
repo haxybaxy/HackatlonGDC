@@ -48,7 +48,7 @@ def main():
     # Total state size = 2 + 1 + 1 + 8 = 12
 
 
-    bots = [MyBot(), MyBot()]
+    bots = [MyBot(action_size=56), MyBot(action_size=56)]
 
     if load_back:
         for idx, bot in enumerate(bots):

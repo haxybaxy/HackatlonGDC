@@ -137,8 +137,8 @@ class MyBot:
 
     def action_to_dict(self, action):
         """Enhanced action space with more granular rotation"""
-        # Define rotation angles
-        rotation_angles = [-45, -30, -15, -5, 0, 5, 15, 30, 45]
+        movement_directions = ["forward", "right", "down", "left"]
+        rotation_angles = [-30, -5, -1, 0, 1, 5, 30]
 
         # Basic movement commands
         commands = {
@@ -150,21 +150,21 @@ class MyBot:
             "shoot": False
         }
 
-        # Decode action
-        if action < 8:  # Movement actions
-            commands["forward"] = action == 0
-            commands["right"] = action == 1
-            commands["down"] = action == 2
-            commands["left"] = action == 3
-            commands["rotate"] = rotation_angles[action - 4] if 4 <= action <= 7 else 0
-        elif action < 16:  # Movement + shoot actions
-            commands["shoot"] = True
-            base_action = action - 8
-            commands["forward"] = base_action == 0
-            commands["right"] = base_action == 1
-            commands["down"] = base_action == 2
-            commands["left"] = base_action == 3
-            commands["rotate"] = rotation_angles[base_action - 4] if 4 <= base_action <= 7 else 0
+        # determine block (no-shoot vs shoot)
+        if action < 28:
+            shoot = False
+            local_action = action  # 0..27
+        else:
+            shoot = True
+            local_action = action - 28  # 0..27
+
+        movement_idx = local_action // 7  # 0..3
+        angle_idx = local_action % 7  # 0..6
+
+        direction = movement_directions[movement_idx]
+        commands[direction] = True
+        commands["rotate"] = rotation_angles[angle_idx]
+        commands["shoot"] = shoot
 
         return commands
 
