@@ -63,7 +63,7 @@ class MyBot:
         self.epsilon_min = 0.05  # Lower minimum exploration
         self.epsilon_decay = 0.9995  # Slower decay
         self.learning_rate = 0.0003  # Reduced learning rate
-        self.batch_size = 32  # Reduced batch size for faster initial learning
+        self.batch_size = 64  # Increased batch size for more stable learning
         self.min_memory_size = 1000  # Minimum memory size before starting training
         self.update_target_freq = 1000  # How often to update target network
         self.steps = 0
@@ -217,61 +217,92 @@ class MyBot:
             print(f"Error in remember: {e}")
 
     def replay(self):
-        """Safe replay function that checks memory size"""
-        if len(self.memory) < self.batch_size:
-            return
+        """Train the agent with randomly sampled batch from memory."""
+        if len(self.memory) < self.min_memory_size:
+            return  # Don't start training until we have enough samples
 
-        try:
-            minibatch = random.sample(self.memory, self.batch_size)
+        if not self.training_started:
+            print("Starting training...")
+            self.training_started = True
 
-            # Prepare batch data
-            states = {
-                'location': torch.stack([t[0]['location'] for t in minibatch]).to(self.device),
-                'status': torch.stack([t[0]['status'] for t in minibatch]).to(self.device),
-                'rays': torch.stack([t[0]['rays'] for t in minibatch]).to(self.device)
-            }
+        self.steps += 1
 
-            next_states = {
-                'location': torch.stack([t[3]['location'] for t in minibatch]).to(self.device),
-                'status': torch.stack([t[3]['status'] for t in minibatch]).to(self.device),
-                'rays': torch.stack([t[3]['rays'] for t in minibatch]).to(self.device)
-            }
+        # Update target network periodically
+        if self.steps % self.update_target_freq == 0:
+            self.target_model.load_state_dict(self.model.state_dict())
 
-            actions = torch.tensor([t[1] for t in minibatch], dtype=torch.long).to(self.device)
-            rewards = torch.tensor([t[2] for t in minibatch], dtype=torch.float32).to(self.device)
-            dones = torch.tensor([t[4] for t in minibatch], dtype=torch.float32).to(self.device)
+        # Sample a batch of transitions from memory
+        batch_size = min(self.batch_size, len(self.memory))
+        minibatch = random.sample(self.memory, batch_size)
 
+        # Process the batch
+        states, targets = [], []
+        for state, action, reward, next_state, done in minibatch:
+            # Convert states to tensor format
+            state_tensor = self.state_to_tensors(state)
+            
             # Get current Q values
-            current_q_values = self.model(states).gather(1, actions.unsqueeze(1))
+            q_values = self.model(state_tensor).cpu().detach().numpy()
+            
+            if done:
+                target = reward
+            else:
+                # Get next state Q values using target network for stability
+                next_state_tensor = self.state_to_tensors(next_state)
+                next_q_values = self.target_model(next_state_tensor).cpu().detach().numpy()
+                target = reward + self.gamma * np.max(next_q_values)
+            
+            # Update target for the chosen action only
+            target_f = q_values.copy()
+            target_f[action] = target
+            
+            states.append(state)
+            targets.append(target_f)
 
-            # Get next Q values from target network
-            with torch.no_grad():
-                next_q_values = self.target_model(next_states).max(1)[0]
-                target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+        # Convert to tensors for batch processing
+        X = [self.state_to_tensors(s) for s in states]
+        Y = [torch.tensor(t, dtype=torch.float32).to(self.device) for t in targets]
 
-            # Compute loss and optimize
-            loss = F.smooth_l1_loss(current_q_values.squeeze(), target_q_values)
-
+        # Train in batches of 8 to avoid CUDA memory issues
+        sub_batch_size = 8
+        for i in range(0, len(X), sub_batch_size):
+            sub_X = X[i:i+sub_batch_size]
+            sub_Y = Y[i:i+sub_batch_size]
+            
+            # Prepare batch data
+            batch_loc = torch.stack([x['location'] for x in sub_X])
+            batch_status = torch.stack([x['status'] for x in sub_X])
+            batch_rays = torch.stack([x['rays'] for x in sub_X])
+            
+            # Forward pass
             self.optimizer.zero_grad()
+            
+            # Create input dictionary
+            input_dict = {
+                'location': batch_loc,
+                'status': batch_status,
+                'rays': batch_rays
+            }
+            
+            # Get model output
+            predictions = self.model(input_dict)
+            
+            # Compute loss
+            targets_batch = torch.stack(sub_Y)
+            loss = F.mse_loss(predictions, targets_batch)
+            
+            # Backward pass and optimize
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)  # Gradient clipping
             self.optimizer.step()
 
-            # Decay epsilon
-            self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-
-        except Exception as e:
-            print(f"Error in replay: {e}")
+        # Decay epsilon
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
 
     def save(self, filepath):
         """Saves the model weights."""
         try:
-            torch.save({
-                'model_state_dict': self.model.state_dict(),
-                'optimizer_state_dict': self.optimizer.state_dict(),
-                'epsilon': self.epsilon,
-                'steps': self.steps
-            }, filepath)
+            torch.save(self.model.state_dict(), filepath)
             print(f"Model saved successfully to {filepath}")
         except Exception as e:
             print(f"Error saving model: {e}")
@@ -279,12 +310,9 @@ class MyBot:
     def load(self, filepath):
         """Loads model weights from the specified file."""
         try:
-            checkpoint = torch.load(filepath, map_location=self.device)
-            self.model.load_state_dict(checkpoint['model_state_dict'])
-            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            self.epsilon = checkpoint['epsilon']
-            self.steps = checkpoint['steps']
-            self.model.to(self.device)
+            state_dict = torch.load(filepath, map_location=self.device)
+            self.model.load_state_dict(state_dict)
+            self.target_model.load_state_dict(state_dict)
             print(f"Model loaded successfully from {filepath}")
         except Exception as e:
             print(f"Error loading model: {e}")
@@ -293,3 +321,8 @@ class MyBot:
             self.model = ImprovedDQN(input_dim=34, output_dim=self.action_size).to(self.device)
             self.target_model = ImprovedDQN(input_dim=34, output_dim=self.action_size).to(self.device)
             self.target_model.load_state_dict(self.model.state_dict())
+            
+    def sync_with_shared_model(self, shared_model):
+        """Sync local model with shared model"""
+        self.model.load_state_dict(shared_model.state_dict())
+        self.target_model.load_state_dict(shared_model.state_dict())
